@@ -108,7 +108,7 @@ export async function indexProject(projectPath: string, now: Date = new Date()):
     } else {
       const message = r.reason instanceof Error ? r.reason.message : 'unknown error'
       const fileMatch = message.match(/\[schema\] ([^:]+):/)
-      const fileName = fileMatch?.[1] ?? 'unknown'
+      const fileName = fileMatch?.[1] ?? jsonFiles[results.indexOf(r)] ?? 'unknown'
       errors.push({ file: fileName, message })
       // eslint-disable-next-line no-console
       console.error(`[indexer] ${message}`)

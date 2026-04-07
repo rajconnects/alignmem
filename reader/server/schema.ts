@@ -32,14 +32,14 @@ export const traceNodeSchema = z.object({
   author_name: z.string(),
   content: z.string(),
   context: z.object({
-    source: z.string(),
+    source: z.string().default(''),
     session: z.string().default(''),
     related_topics: z.array(z.string()).default([])
-  }),
+  }).default({ source: '', session: '', related_topics: [] }),
   sequence_order: z.number(),
   created_at: z.string(),
   entities: traceNodeEntitiesSchema.optional()
-})
+}).passthrough()
 
 export const traceEdgeSchema = z.object({
   id: z.string(),
@@ -66,7 +66,7 @@ export const decisionTraceSchema = z.object({
   captured_at: z.string(),
   nodes: z.array(traceNodeSchema),
   edges: z.array(traceEdgeSchema).optional()
-})
+}).passthrough()
 
 export type DecisionTraceSchema = z.infer<typeof decisionTraceSchema>
 
