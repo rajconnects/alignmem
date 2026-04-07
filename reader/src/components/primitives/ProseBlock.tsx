@@ -85,6 +85,7 @@ interface ProseSegment {
 
 // Detect and split on lettered list pattern: (a) ... (b) ... (c) ...
 const LETTERED_LIST = /(?:,\s*|\.\s+|;\s+)(?=\([a-z]\)\s)/g
+void LETTERED_LIST
 const HAS_LETTERED = /\([a-z]\)\s/
 
 // Detect enumerated points: "First: ... Second: ... Third: ..."
@@ -93,6 +94,7 @@ const ENUM_PATTERN = new RegExp(
   `(?<=\\.\\s|^)(?=${ENUM_WORDS.join('|')})[:\\.]?`,
   'g'
 )
+void ENUM_PATTERN
 const HAS_ENUM = new RegExp(`\\b(?:${ENUM_WORDS.slice(0, 3).join('|')})[:.]`)
 
 function extractLabel(text: string): { label: string; body: string } | null {
