@@ -1,0 +1,58 @@
+{
+  "id": "acme-hiring-vp-eng-2026-03-20",
+  "topic": "Should we hire a VP Eng externally or promote internally?",
+  "status": "open",
+  "category": "market_strategy",
+  "project": "Acme Labs",
+  "session_id": "session-acme-2026-03-20-hiring",
+  "skill": "decision-trace-capture",
+  "opened_at": "2026-03-20T14:00:00Z",
+  "resolved_at": null,
+  "resolution_summary": null,
+  "revisit_trigger": "Revisit after Q2 board meeting when headcount budget is confirmed",
+  "outcome": null,
+  "outcome_assessed_at": null,
+  "captured_at": "2026-03-20T15:30:00Z",
+  "nodes": [
+    {
+      "id": "acme-vp-eng-node-1",
+      "node_type": "intent",
+      "author_role": "founder",
+      "author_name": "Sara Chen",
+      "content": "We're at 14 engineers across three squads. Right now I'm acting as de facto VP Eng alongside my CEO responsibilities — reviewing architecture decisions, running the weekly eng all-hands, making final calls on tech debt vs. feature velocity. It's not sustainable past Q2. We have two internal candidates: Dmitri Volkov (Staff Eng, 4 years at Acme, trusted by the team, strong on systems design but has never managed more than 2 direct reports) and Leila Ahmadi (Senior Eng, 2 years, faster career trajectory, good instincts on process but less tenure). The alternative is an external hire at VP level — someone who's scaled an eng org from 15 to 60+.\n\nThe timing question is real. We're likely closing Series A in June. Hiring externally takes 3–4 months minimum. If we promote now and it doesn't work out, we've damaged an internal relationship AND lost 3 months. What's the right frame for this decision?",
+      "context": {
+        "source": "founder-session",
+        "session": "session-acme-2026-03-20-hiring",
+        "related_topics": ["team-scaling", "Series-A", "org-design", "leadership"]
+      },
+      "sequence_order": 1,
+      "created_at": "2026-03-20T14:00:00Z",
+      "entities": {
+        "people": ["Sara Chen", "Dmitri Volkov", "Leila Ahmadi"],
+        "metrics": ["14 engineers", "3 squads", "2 direct reports", "15 to 60+", "3-4 months"],
+        "projects": ["Acme Labs org design", "Series A"],
+        "timeframes": ["Q2", "June", "3-4 months"]
+      }
+    },
+    {
+      "id": "acme-vp-eng-node-2",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Claude",
+      "content": "This is a classic scale-point decision with a timing constraint baked in. Here's how I'd frame it.\n\n**The core tension**\nExternal hires bring proven experience at the next scale, but cost you 3–6 months of ramp before they're net-positive (interview process + onboarding + trust-building with the existing team). Internal promotions are faster to operational effectiveness but introduce execution risk if the person hasn't managed at that scope before.\n\nAt 14 engineers heading into a Series A, you're at a well-documented danger zone: too big for founder-managed eng, too small to justify a $300K+ VP. Most founders in this position regret promoting prematurely more than they regret hiring a bridge solution.\n\n**Evaluating the internal candidates**\nDmitri's technical credibility is an asset — the team already trusts him and he knows the codebase. The risk isn't competence, it's managerial scope. Managing 2 reports vs. 14 (post-Series A, you'll likely add 8–12 heads in 18 months) is a qualitatively different job. The question to answer: has Dmitri *wanted* the management path, or has he been the default option by proximity? A direct conversation, not inference, is needed before this thread can close.\n\nLeila is earlier in tenure, which matters for external credibility during a hiring push — engineers joining post-Series A will scrutinize leadership. Unless she's demonstrably exceptional, promoting her ahead of Dmitri creates a different internal dynamics problem.\n\n**The external hire path**\nIf your Series A closes in June with a standard 24-month runway allocation, you likely have budget. The right profile is someone who has scaled 15→50, not 200→500 — you need a builder-manager, not a process-layer executive. Search takes 12–16 weeks with a good recruiter. Starting the process now means you could have someone onboarded by July–August, post-close.\n\n**A third path worth considering: fractional or interim**\nA fractional VP Eng (3 days/week, 6-month engagement) buys you runway to run a full external search or give Dmitri a structured trial with coaching. Cost: $15K–$25K/month. Avoids the premature promotion trap without the full external hire timeline.\n\n**What needs to be true before deciding**\n1. Has Sara had a direct growth conversation with Dmitri about the VP role and what it would require of him?\n2. Is the Series A timeline firm enough to plan the headcount budget against?\n3. Is the board aligned that VP Eng is the right hire vs. a Head of Product or Head of Engineering (a level below VP)?\n\nRecommendation: Hold the promotion decision until after the Q2 board meeting. Use the interim period to (a) have the direct conversation with Dmitri and (b) start a quiet fractional search in parallel so you have optionality.",
+      "context": {
+        "source": "advisor-analysis",
+        "session": "session-acme-2026-03-20-hiring",
+        "related_topics": ["org-design", "hiring", "Series-A-readiness", "management-development"]
+      },
+      "sequence_order": 2,
+      "created_at": "2026-03-20T14:50:00Z",
+      "entities": {
+        "people": ["Claude", "Dmitri Volkov", "Leila Ahmadi", "Sara Chen"],
+        "metrics": ["$300K+", "8-12 heads", "18 months", "12-16 weeks", "$15K-$25K/month", "3 days/week", "6-month engagement"],
+        "projects": ["Acme Labs org design", "Series A", "fractional VP Eng search"],
+        "timeframes": ["Q2", "June", "July-August", "18 months", "24-month runway"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "id": "acme-war-cabinet-eu-entry-2026-03-25",
+  "topic": "Should Acme Labs expand to the EU market in H2 2026?",
+  "status": "resolved",
+  "category": "market_strategy",
+  "project": "Acme Labs",
+  "session_id": "session-acme-2026-03-25-war-cabinet",
+  "skill": "war-cabinet",
+  "opened_at": "2026-03-25T10:00:00Z",
+  "resolved_at": "2026-03-25T13:45:00Z",
+  "resolution_summary": "Enter EU Q4 2026, UK + Germany first. Hire EU legal counsel by August.",
+  "revisit_trigger": "Revisit if Series B timeline slips past Q3 or if GDPR compliance cost exceeds $150K",
+  "outcome": null,
+  "outcome_assessed_at": null,
+  "captured_at": "2026-03-25T14:00:00Z",
+  "nodes": [
+    {
+      "id": "acme-eu-node-1",
+      "node_type": "intent",
+      "author_role": "founder",
+      "author_name": "Sara Chen",
+      "content": "We've had inbound interest from 6 EU-based companies over the past quarter — three in Germany, two in the UK, one in the Netherlands. All found us organically. We're not marketing into the EU at all. My co-founder thinks we're leaving a real market on the table and wants to formalize EU expansion as a Series A growth story. I'm more cautious: GDPR compliance is non-trivial, we'd need EU data residency infrastructure, and we're already stretched thin on headcount.\n\nI'm convening the War Cabinet to pressure-test this decision before I put it in front of the board. The question: should Acme Labs formally enter the EU market in H2 2026, and if so, what does responsible expansion look like?",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["international-expansion", "Series-A", "GDPR", "GTM-strategy"]
+      },
+      "sequence_order": 1,
+      "created_at": "2026-03-25T10:00:00Z",
+      "entities": {
+        "people": ["Sara Chen"],
+        "metrics": ["6 EU companies", "3 in Germany", "2 in UK", "1 in Netherlands"],
+        "projects": ["Acme Labs EU expansion", "Series A"],
+        "timeframes": ["past quarter", "H2 2026"]
+      }
+    },
+    {
+      "id": "acme-eu-node-2",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Priya Sharma",
+      "content": "**Operational Feasibility Assessment**\n\nThe inbound signal of 6 companies in a single quarter without active marketing is meaningful — that's organic pull, not noise. The operational question is whether you can serve EU customers without standing up a parallel infrastructure track that competes with your core product work.\n\nOn infrastructure: EU data residency is now a hard requirement for most enterprise customers, not a nice-to-have. AWS eu-west-1 (Ireland) and eu-central-1 (Frankfurt) are the standard choices. Standing up a second region is a 4–6 week engineering project if your IaC is mature, 3–4 months if you're still doing manual infra. You need to be honest about where you are.\n\nOn operations: You don't need a physical EU office in H2 2026. Remote-first with a contract EU legal entity (a simple BV in Netherlands or UG in Germany) is sufficient for initial contracts. Typical setup cost: $8K–$15K in legal fees, 6–8 weeks.\n\nRisk flag: If you commit to EU customers before infrastructure is ready, you'll be making verbal data residency commitments you can't keep on day one. That's a trust-breaking event, not just a compliance gap. Don't sell ahead of the infrastructure runway.",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["infrastructure", "data-residency", "AWS", "legal-entity"]
+      },
+      "sequence_order": 2,
+      "created_at": "2026-03-25T10:30:00Z",
+      "entities": {
+        "people": ["Priya Sharma"],
+        "metrics": ["4-6 weeks", "3-4 months", "$8K-$15K", "6-8 weeks"],
+        "projects": ["EU infrastructure", "legal entity setup"],
+        "timeframes": ["H2 2026", "4-6 weeks", "6-8 weeks"]
+      }
+    },
+    {
+      "id": "acme-eu-node-3",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Marcus Webb",
+      "content": "**Capital Allocation Analysis**\n\nLet's run the numbers on what EU entry actually costs at your current scale, and whether it's defensible in a Series A pitch.\n\nMinimum viable EU entry (UK + Germany, remote-first, no office):\n- Legal entity + contracts + local counsel: $15K–$20K one-time\n- EU data residency infrastructure (assuming AWS): $2K–$5K/month incremental\n- Compliance audit (GDPR gap analysis + remediation): $25K–$60K depending on current posture\n- Total Year 1 incremental cost estimate: $75K–$120K\n\nThis is meaningful but not prohibitive at Series A scale, provided you're pricing EU deals at $500+/seat/month equivalent (enterprise tier). If you're selling the same $99 base to EU customers, the unit economics don't support the compliance overhead until you have ~30+ EU accounts.\n\nThe Series A narrative angle: early EU traction (even 6 signed customers) creates a credible international expansion story. Investors at this stage value evidence of product-market fit beyond a single geography. The risk of NOT entering is that a competitor with better compliance posture takes the inbound you're ignoring.\n\nRecommendation from a capital standpoint: budget $100K for EU entry in H2 2026. Target 10 signed EU customers by year-end as the threshold to justify Series B international investment.",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["Series-A", "unit-economics", "capital-allocation", "investor-narrative"]
+      },
+      "sequence_order": 3,
+      "created_at": "2026-03-25T11:00:00Z",
+      "entities": {
+        "people": ["Marcus Webb"],
+        "metrics": ["$15K-$20K", "$2K-$5K/month", "$25K-$60K", "$75K-$120K", "$500+/seat/month", "30+ EU accounts", "$100K", "10 signed customers"],
+        "projects": ["EU expansion budget", "Series A", "Series B"],
+        "timeframes": ["Year 1", "H2 2026", "year-end"]
+      }
+    },
+    {
+      "id": "acme-eu-node-4",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Ravi Patel",
+      "content": "**Regulatory and GDPR Constraints**\n\nI want to be precise here because GDPR is often treated as a checkbox and then becomes a crisis. The key requirements Sara needs to plan against:\n\n1. **Data Processing Agreements (DPAs):** Every EU customer contract must include a DPA. This isn't optional. Your legal team needs to have a standard DPA template before you sign the first EU customer.\n\n2. **Data Residency vs. Data Sovereignty:** These are different. Data residency (data stays in EU region) is achievable with an AWS eu-west-1 deployment. Data sovereignty (data subject to EU law only, no US government access) is much harder and requires careful SCCs (Standard Contractual Clauses) structuring after the Schrems II ruling. Most Series A companies can satisfy enterprise customers with residency + SCCs — full sovereignty is usually a public sector requirement.\n\n3. **Sub-processor inventory:** GDPR requires you to disclose all sub-processors handling EU personal data. If you're using US-based SaaS tools (Intercom, Stripe, Segment, etc.) you need DPAs with all of them. Audit your stack now.\n\n4. **Right to erasure / data deletion:** You need a documented process to delete all EU customer data within 30 days of a deletion request. If your current architecture doesn't support this cleanly (e.g., data in backups, analytics pipelines), you need remediation before launch.\n\n**Timeline reality check:** A proper GDPR readiness audit takes 4–8 weeks. Remediation of gaps typically adds another 4–12 weeks. If you want to be compliant by October 2026, you need to start the audit in June at the latest. Starting in August is too late.",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["GDPR", "data-residency", "legal-compliance", "sub-processors"]
+      },
+      "sequence_order": 4,
+      "created_at": "2026-03-25T11:30:00Z",
+      "entities": {
+        "people": ["Ravi Patel"],
+        "metrics": ["30 days", "4-8 weeks", "4-12 weeks"],
+        "projects": ["GDPR compliance", "DPA template", "sub-processor audit"],
+        "timeframes": ["October 2026", "June", "August"]
+      }
+    },
+    {
+      "id": "acme-eu-node-5",
+      "node_type": "dissent",
+      "author_role": "advisor",
+      "author_name": "Maya Torres",
+      "content": "**Contrarian Case: Don't Enter EU in H2 2026**\n\nI want to push back on the framing that 6 inbound leads constitutes validated demand. It constitutes curiosity. These are companies that filled out a contact form — we don't know their budget, their decision-making timeline, or whether they'd pay EU-enterprise pricing. Before allocating $100K and 6+ months of eng time, you need to convert at least 2–3 of those inbounds into paid pilots at EU-tier pricing. If you can't close them, the expansion thesis collapses.\n\nThe deeper risk I'm not hearing anyone name: **engineering bandwidth**. You are 14 engineers, you're mid-Series A, you just decided to rebuild your pricing model (previous decision trace). Adding EU infrastructure, GDPR compliance, and a second AWS region to the roadmap in the next 6 months will cause one of three failure modes: (1) the core product falls behind US competitors, (2) the EU infrastructure ships with quality shortcuts that create trust-breaking incidents, or (3) your engineering team burns out and key people leave before the Series A closes.\n\nI'm not saying never enter EU. I'm saying H2 2026 is the wrong timing given your current operational load. My recommendation: close 3 EU pilot customers at full pricing first (proving demand), then make the infrastructure investment for H1 2027. Doing it in that order costs you 6 months of market time but saves you $100K in premature infrastructure spend and protects your team.\n\nThis is a dissent, not a veto. But I want it on record that we're accepting real execution risk if we proceed on the current timeline.",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["execution-risk", "engineering-bandwidth", "demand-validation", "timing"]
+      },
+      "sequence_order": 5,
+      "created_at": "2026-03-25T12:00:00Z",
+      "entities": {
+        "people": ["Maya Torres"],
+        "metrics": ["6 inbound leads", "2-3 paid pilots", "$100K", "14 engineers", "6 months"],
+        "projects": ["EU expansion", "Series A"],
+        "timeframes": ["H2 2026", "H1 2027", "6 months"]
+      }
+    },
+    {
+      "id": "acme-eu-node-6",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Nadia Okafor",
+      "content": "**Customer Demand Signal Analysis**\n\nI've looked at the 6 inbound companies more carefully. Here's what the signal actually tells us:\n\nThe 3 German inbounds are from mid-market SaaS companies (50–200 employees). This cohort has specific procurement requirements: SOC 2 Type II plus GDPR compliance as baseline, not premium. Without both, they won't sign regardless of product quality. Two of the three specifically mentioned 'EU data residency' in their initial inquiry.\n\nThe 2 UK inbounds are interesting — the UK is post-Brexit, which means GDPR-equivalent (UK GDPR) but with somewhat different enforcement risk and no EU data residency requirement for UK-only deals. You could serve UK customers from US infrastructure today with appropriate SCCs. This is your fastest path to EU revenue without the full infrastructure buildout.\n\nThe Netherlands company is likely a gateway buyer — Netherlands-headquartered companies frequently buy on behalf of DACH-region operations. If they're serious, they're likely procuring for a broader footprint.\n\nDemand validation recommendation: Prioritize the 2 UK inbounds for immediate close. Convert them without EU infrastructure (SCCs are sufficient). Use their case studies to generate more EU pipeline. Treat Germany as Q4 target requiring the full infrastructure investment. This sequences the risk — you're not betting $100K on 6 unqualified leads, you're building demand evidence before committing capital.",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["customer-demand", "UK-market", "Germany-market", "sales-pipeline"]
+      },
+      "sequence_order": 6,
+      "created_at": "2026-03-25T12:30:00Z",
+      "entities": {
+        "people": ["Nadia Okafor"],
+        "metrics": ["50-200 employees", "SOC 2 Type II"],
+        "projects": ["EU pipeline", "UK market entry", "Germany market entry"],
+        "timeframes": ["Q4", "immediate"]
+      }
+    },
+    {
+      "id": "acme-eu-node-7",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Panel Synthesis",
+      "content": "**Cross-Examination Summary — War Cabinet Consensus**\n\nAfter surfacing the dissent and all five perspectives, here is where the panel converges and diverges:\n\n**Convergence points:**\n- All five advisors agree that the 6 inbound leads are insufficient to justify full EU infrastructure investment without first qualifying demand.\n- Nadia's sequencing proposal (UK first, Germany Q4) resolves the tension between Maya's caution and Marcus's capital case. UK entry requires only SCCs, no new infrastructure — this de-risks the first step significantly.\n- Ravi's GDPR timeline is non-negotiable: if Sara targets Germany in Q4 2026, the compliance audit must begin in June. This is a hard constraint, not a recommendation.\n- Priya's infrastructure assessment confirms UK entry is achievable without new AWS regions. Germany entry requires eu-central-1, which is a 4–6 week eng project with adequate planning.\n\n**Where dissent remains:**\nMaya's dissent is well-founded on execution risk. The panel cannot override her concern — the engineering bandwidth constraint is real and Sara must stress-test the roadmap before committing. If the pricing model migration (previous decision trace) plus EU infrastructure plus Series A diligence requests all land in Q2–Q3, something will slip.\n\n**Recommended path for Sara's decision:**\n1. Close UK inbounds now, US infrastructure + SCCs, no delay\n2. Start GDPR audit June 1 if committing to Germany in Q4\n3. Gate Germany entry on: (a) UK pilot signed, (b) engineering capacity confirmed post-pricing-migration, (c) EU legal counsel retained by August\n4. Revisit full EU expansion scope for Series B narrative — don't over-promise EU in Series A deck",
+      "context": {
+        "source": "war-cabinet-session",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["war-cabinet-synthesis", "EU-expansion", "risk-sequencing", "Series-A"]
+      },
+      "sequence_order": 7,
+      "created_at": "2026-03-25T13:15:00Z",
+      "entities": {
+        "people": ["Panel Synthesis", "Maya Torres", "Marcus Webb", "Nadia Okafor", "Ravi Patel", "Priya Sharma"],
+        "metrics": ["6 inbound leads", "4-6 weeks"],
+        "projects": ["EU expansion", "Series A", "UK entry", "Germany entry"],
+        "timeframes": ["Q2-Q3", "Q4 2026", "June 1", "August"]
+      }
+    },
+    {
+      "id": "acme-eu-node-8",
+      "node_type": "resolution",
+      "author_role": "founder",
+      "author_name": "Sara Chen",
+      "content": "Decision made. We're entering EU in Q4 2026, UK and Germany only.\n\nI hear Maya's dissent and I'm taking it seriously. Here's how I'm addressing the execution risk: we're treating EU infrastructure as a distinct project with a dedicated 2-engineer squad starting July 1 — it does not draw from the same pool working on the pricing migration. If we can't staff a 2-person squad by July without affecting the core roadmap, we push Germany to Q1 2027 and UK-only becomes the Q4 play.\n\nCommitments I'm making today:\n1. Engage EU legal counsel by August 1. Will use Nadia's contact at Fieldfisher.\n2. Start GDPR readiness audit June 1 — Ravi will intro us to the compliance firm he referenced.\n3. Close UK inbounds within 60 days (Nadia owns the outreach reactivation).\n4. Germany entry gated on: UK pilot signed + engineering squad staffed + legal counsel retained. All three must be green by August 15 or Germany slips to Q1 2027.\n5. EU expansion in Series A deck is framed as 'early signal + structured entry' — not a full international expansion narrative. We're not overpromising.\n\nRevisit trigger: If Series B timeline slips past Q3, or if GDPR compliance cost exceeds $150K (the number where it starts to hurt our runway math), we reconvene.\n\nThanks to the cabinet. Maya's dissent is logged and I want it visible in the decision record — this was not a unanimous call.",
+      "context": {
+        "source": "founder-resolution",
+        "session": "session-acme-2026-03-25-war-cabinet",
+        "related_topics": ["EU-expansion", "Series-A", "GDPR", "GTM-strategy", "org-design"]
+      },
+      "sequence_order": 8,
+      "created_at": "2026-03-25T13:45:00Z",
+      "entities": {
+        "people": ["Sara Chen", "Nadia Okafor", "Ravi Patel", "Maya Torres"],
+        "metrics": ["2-engineer squad", "60 days", "$150K", "August 15"],
+        "projects": ["EU expansion", "Series A", "Series B", "GDPR compliance", "UK entry", "Germany entry"],
+        "timeframes": ["Q4 2026", "Q1 2027", "July 1", "August 1", "June 1", "August 15", "Q3"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+Business Source License 1.1
+
+Licensor: Alignmem
+Licensed Work: Alignmem Decision Engine
+Full name of the Licensed Work: Alignmem Decision Engine
+
+Change Date: 2030-04-07
+Change License: Apache License 2.0
+
+Additional Use Grant: None
+
+---------------
+
+You may use the Licensed Work only in compliance with the Specifications and the terms of this License. Unless the accompanying documentation explicitly states otherwise, the Licensed Work is provided only on an "as-is" basis, without warranties or conditions of any kind, express or implied.
+
+You may not use the Licensed Work except in compliance with the Specifications and this License. Any use, reproduction, modification, distribution, or display of the Licensed Work without complying with the Specifications and this License is prohibited.
+
+Grant of Rights
+
+Subject to the limitations and conditions in this License, Licensor grants You a non-exclusive, royalty-free, worldwide, non-transferable license during the License Term to:
+
+1. Use, copy, and modify the Licensed Work;
+2. Create works that derive from the Licensed Work;
+3. Reproduce copies of the Licensed Work;
+4. Distribute copies of, or sublicense and distribute, the Licensed Work and Derivative Works under the terms of this License;
+5. Make non-production uses of the Licensed Work.
+
+Conditions
+
+You must:
+
+1. Obtain a license for any use of the Licensed Work at the price set by Licensor or, if Licensor does not set a price, at Licensor's request.
+2. Include a copy of all notices and licenses pertaining to the Licensed Work with any distribution of the Licensed Work.
+3. Ensure that recipients of the Licensed Work know that the Licensed Work is subject to this License and how it applies to that recipient's use of the Licensed Work.
+4. Retain, in the source code of any Derivative Works that You distribute, all copyright, patent, trademark, and attribution notices from the source code of the Licensed Work, excluding those notices that do not pertain to any part of the Derivative Works.
+5. Preserve the source code form of the Licensed Work in any Derivative Works that You distribute.
+
+Change Date Provision
+
+If the Licensor specifies a Change Date, the Licensed Work shall be released under the Change License on the Change Date.
+
+On the Change Date (or earlier, at Licensor's discretion), Licensor may publish revised and/or new versions of the License, which will apply to the Licensed Work.
+
+Effective Date
+
+The License is effective as of the date Licensor provides notice of the Licensed Work's availability under these terms.
+
+Disclaimer
+
+THE LICENSED WORK IS PROVIDED ON AN "AS-IS" BASIS. LICENSOR HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS OR IMPLIED, INCLUDING (WITHOUT LIMITATION) WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND TITLE.
+
+Limitation of Liability
+
+TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL, CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES, WHETHER ARISING OUT OF THIS LICENSE, THIS AGREEMENT, OR USE OF THE LICENSED WORK, EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+Dispute Resolution
+
+Any dispute relating to this License will be resolved by binding arbitration in the English language, under the Arbitration Rules of the American Arbitration Association, in New York City, with one arbitrator.
+
+Severability
+
+If any provision of this License is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.
+
+Entire Agreement
+
+This License, together with the documentation of the Licensed Work, constitutes the entire agreement between Licensor and You concerning the Licensed Work.
+
+---
+
+For more information, see https://mariadb.com/bsl11/

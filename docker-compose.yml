@@ -1,0 +1,12 @@
+services:
+  alignmem:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ./samples:/app/samples
+    environment:
+      - NODE_ENV=production
+      - PORT=3000

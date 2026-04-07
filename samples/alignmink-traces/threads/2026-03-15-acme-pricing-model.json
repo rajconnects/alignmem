@@ -1,0 +1,78 @@
+{
+  "id": "acme-pricing-model-2026-03-15",
+  "topic": "Should we switch from per-seat to usage-based pricing?",
+  "status": "resolved",
+  "category": "product_scope",
+  "project": "Acme Labs",
+  "session_id": "session-acme-2026-03-15-pricing",
+  "skill": "decision-trace-capture",
+  "opened_at": "2026-03-15T09:00:00Z",
+  "resolved_at": "2026-03-15T11:30:00Z",
+  "resolution_summary": "Hybrid pricing: $99/seat base + usage tiers for API calls above 10K/month",
+  "revisit_trigger": "Revisit if monthly churn exceeds 5% after 2 quarters on hybrid model",
+  "outcome": null,
+  "outcome_assessed_at": null,
+  "captured_at": "2026-03-15T11:45:00Z",
+  "nodes": [
+    {
+      "id": "acme-pricing-node-1",
+      "node_type": "intent",
+      "author_role": "founder",
+      "author_name": "Sara Chen",
+      "content": "We've been on per-seat pricing since launch — $49/seat/month. It made sense early on when we were selling to small teams, but we're now seeing two problems. First, power users are generating 10x the API call volume of light users but paying the same price. Second, we're losing enterprise deals where procurement won't approve per-seat models because they can't predict growth costs. I want to explore moving to usage-based pricing — either fully or partially. The question is: does the data support making this shift now, and what are the risks if we get the model wrong?",
+      "context": {
+        "source": "founder-session",
+        "session": "session-acme-2026-03-15-pricing",
+        "related_topics": ["monetization", "enterprise-sales", "ARR-growth"]
+      },
+      "sequence_order": 1,
+      "created_at": "2026-03-15T09:00:00Z",
+      "entities": {
+        "people": ["Sara Chen"],
+        "metrics": ["churn rate", "ARR", "API call volume", "$49/seat/month"],
+        "projects": ["Acme Labs pricing"],
+        "timeframes": ["since launch", "now"]
+      }
+    },
+    {
+      "id": "acme-pricing-node-2",
+      "node_type": "response",
+      "author_role": "advisor",
+      "author_name": "Claude",
+      "content": "Here's the structural analysis across both models and a third path you haven't named yet.\n\n**Per-Seat (status quo)**\nStrengths: Predictable ARR for you, predictable cost for customers. Easy to forecast headcount-based expansion. Works well when value scales with users, not usage.\nWeaknesses: Underprices power users, overprices occasional users, creates churn risk among the low-utilization cohort. Enterprise procurement friction is real — many CFOs will not approve open-ended per-seat growth.\n\n**Pure Usage-Based (metered)**\nStrengths: Aligns cost to value delivered. High-volume customers pay more, low-volume customers stay (removing churn from underuse). Preferred by developers and API-centric buyers.\nWeaknesses: Revenue becomes volatile and hard to forecast. CAC stays high but LTV becomes uncertain. Sales compensation models break. Support burden increases when customers hit billing surprises. Risky to switch entirely at your stage — you'd be reforecasting ARR from scratch.\n\n**Hybrid (base commit + overage)**\nThis is the path most B2B SaaS companies converge on between Series A and B. A base seat fee establishes ARR floor and procurement-friendliness. Usage tiers above a generous free allowance capture value from power users without penalizing light users.\n\nKey design decisions if you go hybrid:\n1. Set the free allowance high enough that 70–80% of customers never hit it (retains simplicity for most).\n2. Price the overage tiers on a curve, not linearly — first overage tier is intentionally low to reduce sticker shock.\n3. Grandfather existing customers for 1–2 billing cycles minimum.\n4. Build usage dashboards before launch — customers need transparency or trust breaks down.\n\nRisk to watch: If churn spikes after 2 quarters on hybrid, it usually signals the free allowance was set too low and low-usage customers feel nickel-and-dimed. Set a churn threshold as your revisit trigger.",
+      "context": {
+        "source": "advisor-analysis",
+        "session": "session-acme-2026-03-15-pricing",
+        "related_topics": ["pricing-strategy", "B2B-SaaS", "ARR-forecasting", "enterprise-procurement"]
+      },
+      "sequence_order": 2,
+      "created_at": "2026-03-15T09:45:00Z",
+      "entities": {
+        "people": ["Claude"],
+        "metrics": ["ARR", "CAC", "LTV", "churn rate", "70-80% free allowance threshold"],
+        "projects": ["Acme Labs pricing"],
+        "timeframes": ["Series A to B", "1-2 billing cycles", "2 quarters"]
+      }
+    },
+    {
+      "id": "acme-pricing-node-3",
+      "node_type": "resolution",
+      "author_role": "founder",
+      "author_name": "Sara Chen",
+      "content": "We're going hybrid. The pure usage-based path is too risky while we're still closing our Series A — I can't hand investors a revenue model with this much variance right now. But staying pure per-seat means we're leaving money on the table with our top 15% of customers who are clearly getting outsized value.\n\nDecision: $99/seat/month base (up from $49, but includes 10K API calls/seat/month). Usage tiers above that: $0.008/call for 10K–100K, $0.005/call above 100K. Existing customers get 60 days on the old pricing with a personal migration email from me.\n\nWe'll build usage dashboards in parallel — this is non-negotiable before we flip the switch. Timeline: new pricing live by April 30. If churn exceeds 5% in either of the first two full billing quarters post-launch, we convene a pricing review immediately.",
+      "context": {
+        "source": "founder-resolution",
+        "session": "session-acme-2026-03-15-pricing",
+        "related_topics": ["monetization", "Series-A", "customer-success", "product-roadmap"]
+      },
+      "sequence_order": 3,
+      "created_at": "2026-03-15T11:30:00Z",
+      "entities": {
+        "people": ["Sara Chen"],
+        "metrics": ["$99/seat/month", "10K API calls/seat/month", "$0.008/call", "$0.005/call", "5% churn threshold", "60 days"],
+        "projects": ["Acme Labs pricing", "usage dashboard"],
+        "timeframes": ["April 30", "60 days", "2 quarters"]
+      }
+    }
+  ]
+}
