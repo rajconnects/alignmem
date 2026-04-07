@@ -34,41 +34,68 @@ export const traceNodeSchema = z.object({
   context: z.object({
     source: z.string().default(''),
     session: z.string().default(''),
-    related_topics: z.array(z.string()).default([])
+    related_topics: z.array(z.string()).default([]),
+    // Production traces may use these alternate field names
+    related_docs: z.array(z.string()).optional(),
+    pulse_week: z.string().nullable().optional(),
+    trigger: z.string().nullable().optional()
   }).default({ source: '', session: '', related_topics: [] }),
   sequence_order: z.number(),
   created_at: z.string(),
+  embedding: z.unknown().optional(),
   entities: traceNodeEntitiesSchema.optional()
 }).passthrough()
 
 export const traceEdgeSchema = z.object({
   id: z.string(),
-  source_thread_id: z.string(),
+  source_thread_id: z.string().optional(),
   target_thread_id: z.string(),
   edge_type: z.string(),
-  rationale: z.string().optional()
-})
+  rationale: z.string().optional(),
+  description: z.string().optional(),
+  created_at: z.string().optional()
+}).passthrough()
 
-export const decisionTraceSchema = z.object({
+// Accept both field name conventions:
+//   Engine spec:  status, category
+//   Supabase/DB:  thread_status, decision_category
+// The transform normalizes to the spec names for the rest of the app.
+const rawTraceSchema = z.object({
   id: z.string(),
   topic: z.string(),
-  status: traceStatusSchema,
-  category: z.string(),
-  project: z.string(),
+  // Accept either field name for status
+  status: traceStatusSchema.optional(),
+  thread_status: traceStatusSchema.optional(),
+  // Accept either field name for category
+  category: z.string().optional(),
+  decision_category: z.string().optional(),
+  project: z.string().optional().default(''),
   session_id: z.string(),
   skill: z.string().optional(),
+  company_id: z.unknown().optional(),
+  cycle_id: z.unknown().optional(),
+  spine_priority_id: z.unknown().optional(),
   opened_at: z.string(),
   resolved_at: z.string().nullable().default(null),
   resolution_summary: z.string().nullable().default(null),
   revisit_trigger: z.string().nullable().default(null),
   outcome: z.string().nullable().default(null),
   outcome_assessed_at: z.string().nullable().default(null),
-  captured_at: z.string(),
+  captured_at: z.string().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
   nodes: z.array(traceNodeSchema),
   edges: z.array(traceEdgeSchema).optional()
 }).passthrough()
 
-export type DecisionTraceSchema = z.infer<typeof decisionTraceSchema>
+export const decisionTraceSchema = rawTraceSchema.transform((data) => ({
+  ...data,
+  status: data.status ?? data.thread_status ?? 'open' as const,
+  category: data.category ?? data.decision_category ?? '',
+  captured_at: data.captured_at ?? data.created_at ?? data.opened_at,
+}))
+
+export type DecisionTraceSchema = z.output<typeof decisionTraceSchema>
 
 // Request body schemas for API endpoints
 export const loginBodySchema = z.object({ passcode: z.string().min(1) })
