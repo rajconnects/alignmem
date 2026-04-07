@@ -1,10 +1,12 @@
-# alignmem
+# Alignmem - Decision Memory Claude Skill
 
-> Every decision leaves a trace.
+> Give Claude memory of the decisions you have made and 'Why'.
 
 You make dozens of strategic decisions inside AI conversations. Pricing pivots, hiring calls, go-to-market bets. Then the conversation ends, and the reasoning disappears. Three months later, you remember _what_ you decided but not _why_ -- or what you were worried about when you made the call.
 
-alignmem captures those decisions as structured traces and gives you a local dashboard to search, filter, and revisit them. The decision engine runs inside Claude. The trace reader runs on your machine. Nothing leaves localhost.
+What you get: Once set up, Claude asks you when you make a big decision & captures and logs your decision with the reasoning. Sometimes you ask, and mostly Claude will suggest you do.
+
+Alignmem captures those decisions as structured traces and provides a local dashboard for searching, filtering, and revisiting them. The decision engine runs inside Claude. The trace reader runs on your machine. Nothing leaves localhost.
 
 &nbsp;
 
