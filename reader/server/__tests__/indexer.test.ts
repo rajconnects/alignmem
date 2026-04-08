@@ -1,13 +1,33 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import path from 'node:path'
+import os from 'node:os'
+import fs from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { bucketFor, derive, indexProject } from '../indexer.js'
+import { importAllTraces } from '../storage.js'
 import type { DecisionTraceSchema } from '../schema.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // The repo ships with sample traces; point the tests at the real folder
 // so we exercise actual schema data from production decision capture.
 const REAL_PROJECT = path.resolve(__dirname, '..', '..', '..', 'samples')
+const REAL_PROJECT_NAME = path.basename(REAL_PROJECT)
+
+let testHome: string
+
+beforeAll(async () => {
+  testHome = await fs.mkdtemp(path.join(os.tmpdir(), 'alignmem-indexer-test-'))
+  process.env.ALIGNMEM_HOME = testHome
+  // Pre-import the sample traces into the local store so indexProject can read them.
+  await importAllTraces(REAL_PROJECT, REAL_PROJECT_NAME)
+})
+
+afterAll(async () => {
+  if (testHome) {
+    await fs.rm(testHome, { recursive: true, force: true })
+  }
+  delete process.env.ALIGNMEM_HOME
+})
 
 const baseTrace: DecisionTraceSchema = {
   id: 'dt-test',
@@ -97,7 +117,7 @@ describe('bucketFor()', () => {
 
 describe('indexProject()', () => {
   it('reads the real sample corpus without crashing', async () => {
-    const result = await indexProject(REAL_PROJECT)
+    const result = await indexProject(REAL_PROJECT, REAL_PROJECT_NAME)
     // There is at least one valid trace in the repo
     expect(result.traces.length).toBeGreaterThan(0)
     // Every trace has derived fields populated
@@ -115,8 +135,8 @@ describe('indexProject()', () => {
     }
   })
 
-  it('returns an empty result (with an error) for a missing folder', async () => {
-    const result = await indexProject('/definitely/not/a/real/path/alignmem')
+  it('returns an empty result (with an error) for a missing project name', async () => {
+    const result = await indexProject('', 'nonexistent-project-xyz')
     expect(result.traces).toEqual([])
     expect(result.errors.length).toBeGreaterThan(0)
   })

@@ -1,10 +1,13 @@
 import chokidar, { type FSWatcher } from 'chokidar'
 import path from 'node:path'
+import { importTrace, removeLocalTrace } from './storage.js'
 
 // Chokidar watcher pool, keyed by project name.
-// Each watcher debounces file system events and emits a single
-// 'traces-updated' event per 200ms burst to prevent SSE flooding on
-// bulk file operations.
+// Each watcher copies changed files into the local store first, then
+// debounces notifications so the indexer (which reads from local store)
+// never touches the cloud-synced source directory after the initial import.
+// A single 'traces-updated' event is emitted per 200ms burst to prevent
+// SSE flooding on bulk file operations.
 
 type ChangeListener = () => void
 
@@ -28,11 +31,13 @@ export function subscribe(projectName: string, projectPath: string, listener: Ch
     })
     watcher = { fs: fsWatcher, listeners: new Set(), timer: null }
 
-    const notify = (): void => {
-      if (!watcher) return
-      if (watcher.timer) clearTimeout(watcher.timer)
-      watcher.timer = setTimeout(() => {
-        watcher?.listeners.forEach((fn) => {
+    const scheduleNotify = (): void => {
+      const w = watchers.get(projectName)
+      if (!w) return
+      if (w.timer) clearTimeout(w.timer)
+      w.timer = setTimeout(() => {
+        const current = watchers.get(projectName)
+        current?.listeners.forEach((fn) => {
           try {
             fn()
           } catch (err) {
@@ -43,9 +48,40 @@ export function subscribe(projectName: string, projectPath: string, listener: Ch
       }, DEBOUNCE_MS)
     }
 
-    fsWatcher.on('add', notify)
-    fsWatcher.on('change', notify)
-    fsWatcher.on('unlink', notify)
+    fsWatcher.on('add', (filePath: string) => {
+      if (!filePath.toLowerCase().endsWith('.json')) return
+      importTrace(filePath, projectName)
+        .then(scheduleNotify)
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error(`[watcher] importTrace failed for ${filePath}:`, err)
+          scheduleNotify()
+        })
+    })
+
+    fsWatcher.on('change', (filePath: string) => {
+      if (!filePath.toLowerCase().endsWith('.json')) return
+      importTrace(filePath, projectName)
+        .then(scheduleNotify)
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error(`[watcher] importTrace failed for ${filePath}:`, err)
+          scheduleNotify()
+        })
+    })
+
+    fsWatcher.on('unlink', (filePath: string) => {
+      if (!filePath.toLowerCase().endsWith('.json')) return
+      const fileName = path.basename(filePath)
+      removeLocalTrace(fileName, projectName)
+        .then(scheduleNotify)
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error(`[watcher] removeLocalTrace failed for ${fileName}:`, err)
+          scheduleNotify()
+        })
+    })
+
     fsWatcher.on('error', (err) => {
       // eslint-disable-next-line no-console
       console.error(`[watcher] error on ${threadsDir}:`, err)

@@ -14,6 +14,7 @@ import {
 } from './auth.js'
 import {
   findProjectByName,
+  importAllTraces,
   readProjects,
   upsertProject,
   validateProjectPath,
@@ -104,9 +105,13 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
       return
     }
     const projectRoot = validation.resolvedRoot
-    const { traces } = await indexProject(projectRoot)
+    const projectName = path.basename(projectRoot)
+    const { imported, failed } = await importAllTraces(projectRoot, projectName)
+    // eslint-disable-next-line no-console
+    console.log(`[app] importAllTraces: ${imported} imported, ${failed} failed for "${projectName}"`)
+    const { traces } = await indexProject(projectRoot, projectName)
     const entry: ProjectEntry = {
-      name: path.basename(projectRoot),
+      name: projectName,
       path: projectRoot,
       last_seen: new Date().toISOString(),
       trace_count: traces.length
@@ -133,7 +138,7 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
   app.get('/api/traces', requireSession, async (req, res) => {
     const project = await resolveProject(req, res)
     if (!project) return
-    const result = await indexProject(project.path)
+    const result = await indexProject(project.path, project.name)
     res.json({
       success: true,
       data: { traces: result.traces, errors: result.errors, project }
@@ -143,7 +148,7 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
   app.get('/api/traces/:id', requireSession, async (req, res) => {
     const project = await resolveProject(req, res)
     if (!project) return
-    const trace = await findTraceById(project.path, req.params.id)
+    const trace = await findTraceById(project.path, project.name, req.params.id)
     if (!trace) {
       res.status(404).json({ success: false, error: 'trace not found' })
       return
@@ -160,7 +165,7 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
       res.status(400).json({ success: false, error: 'id query param required' })
       return
     }
-    const trace = await findTraceById(project.path, id)
+    const trace = await findTraceById(project.path, project.name, id)
     if (!trace) {
       res.status(404).json({ success: false, error: 'trace not found' })
       return

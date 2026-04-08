@@ -104,6 +104,110 @@ export async function findProjectByName(name: string): Promise<ProjectEntry | nu
   return projects.find((p) => p.name === name) ?? null
 }
 
+// ── Local trace store ────────────────────────────────────
+// Traces are never read from the (potentially cloud-synced) source directory.
+// Instead, they are copied to ~/.alignmem-reader/traces/<projectName>/
+// and the indexer reads from there.
+
+const IMPORT_TIMEOUT_MS = 5_000
+
+export function getTracesDir(projectName: string): string {
+  return path.join(getHomeDir(), 'traces', projectName)
+}
+
+export async function ensureTracesDir(projectName: string): Promise<string> {
+  const dir = getTracesDir(projectName)
+  await fs.mkdir(dir, { recursive: true })
+  return dir
+}
+
+export async function importTrace(sourcePath: string, projectName: string): Promise<void> {
+  const fileName = path.basename(sourcePath)
+  const destDir = await ensureTracesDir(projectName)
+  const destPath = path.join(destDir, fileName)
+
+  let contents: string
+  try {
+    contents = await Promise.race([
+      fs.readFile(sourcePath, 'utf8'),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`timeout reading ${fileName}`)), IMPORT_TIMEOUT_MS)
+      )
+    ])
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    // eslint-disable-next-line no-console
+    console.warn(`[storage] importTrace skipped ${fileName}: ${msg}`)
+    return
+  }
+
+  await fs.writeFile(destPath, contents, { mode: 0o600 })
+}
+
+export async function importAllTraces(
+  projectRoot: string,
+  projectName: string
+): Promise<{ imported: number; failed: number }> {
+  const threadsDir = path.join(projectRoot, 'alignmink-traces', 'threads')
+
+  let entries: string[]
+  try {
+    entries = await fs.readdir(threadsDir)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    // eslint-disable-next-line no-console
+    console.warn(`[storage] importAllTraces could not read ${threadsDir}: ${msg}`)
+    return { imported: 0, failed: 0 }
+  }
+
+  const jsonFiles = entries.filter((f) => f.toLowerCase().endsWith('.json'))
+
+  let imported = 0
+  let failed = 0
+
+  await Promise.allSettled(
+    jsonFiles.map(async (fileName) => {
+      const sourcePath = path.join(threadsDir, fileName)
+      const destDir = await ensureTracesDir(projectName)
+      const destPath = path.join(destDir, fileName)
+
+      let contents: string
+      try {
+        contents = await Promise.race([
+          fs.readFile(sourcePath, 'utf8'),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error(`timeout reading ${fileName}`)),
+              IMPORT_TIMEOUT_MS
+            )
+          )
+        ])
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        // eslint-disable-next-line no-console
+        console.warn(`[storage] importAllTraces skipped ${fileName}: ${msg}`)
+        failed++
+        return
+      }
+
+      await fs.writeFile(destPath, contents, { mode: 0o600 })
+      imported++
+    })
+  )
+
+  return { imported, failed }
+}
+
+export async function removeLocalTrace(fileName: string, projectName: string): Promise<void> {
+  const filePath = path.join(getTracesDir(projectName), fileName)
+  try {
+    await fs.unlink(filePath)
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException)?.code === 'ENOENT') return
+    throw err
+  }
+}
+
 // ── Path validation ──────────────────────────────────────
 // Accepts three natural shapes the user might paste:
 //   (a) <root>                        where <root>/alignmink-traces/threads exists

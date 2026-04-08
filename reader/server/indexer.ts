@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { decisionTraceSchema, type DecisionTraceSchema } from './schema.js'
+import { getTracesDir } from './storage.js'
 
 // Read-only indexer: walks a project's alignmink-traces/threads/ directory,
 // validates each *.json file against the Zod schema, and enriches each trace
@@ -64,8 +65,12 @@ export function derive(trace: DecisionTraceSchema, fileName: string, now: Date =
   }
 }
 
-export async function indexProject(projectPath: string, now: Date = new Date()): Promise<IndexResult> {
-  const threadsDir = path.join(projectPath, 'alignmink-traces', 'threads')
+export async function indexProject(
+  _projectPath: string,
+  projectName: string,
+  now: Date = new Date()
+): Promise<IndexResult> {
+  const threadsDir = getTracesDir(projectName)
   let entries: string[]
   try {
     entries = await fs.readdir(threadsDir)
@@ -136,9 +141,10 @@ export async function indexProject(projectPath: string, now: Date = new Date()):
 }
 
 export async function findTraceById(
-  projectPath: string,
+  _projectPath: string,
+  projectName: string,
   id: string
 ): Promise<IndexedTrace | null> {
-  const { traces } = await indexProject(projectPath)
+  const { traces } = await indexProject('', projectName)
   return traces.find((t) => t.id === id) ?? null
 }

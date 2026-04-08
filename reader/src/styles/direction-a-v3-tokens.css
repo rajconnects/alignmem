@@ -951,12 +951,10 @@ button, input, textarea, select, [role="tab"], [role="dialog"], fieldset {
   background: var(--bg);
 }
 
-/* Pre-dashboard topbar: no sidebar anchoring the logo, so use more
-   generous horizontal padding than the 22px dashboard default.
-   Matches the picker content margins so the logo visually aligns
-   with the "PICK A PROJECT" heading below. */
+/* Pre-dashboard topbar: matches dashboard topbar padding (22px)
+   for visual consistency across Login, ProjectPicker, and Dashboard screens. */
 .auth-shell > .top {
-  padding: 0 48px;
+  padding: 0 22px;
 }
 .auth-center {
   flex: 1;
