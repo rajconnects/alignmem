@@ -14,6 +14,7 @@ import {
 } from './auth.js'
 import {
   findProjectByName,
+  getTracesDir,
   importAllTraces,
   readProjects,
   upsertProject,
@@ -138,6 +139,17 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
   app.get('/api/traces', requireSession, async (req, res) => {
     const project = await resolveProject(req, res)
     if (!project) return
+    // Auto-import on first access: if local store is empty, bulk-import from source
+    const localDir = getTracesDir(project.name)
+    try {
+      const localFiles = await fs.readdir(localDir)
+      if (localFiles.filter(f => f.endsWith('.json')).length === 0) {
+        await importAllTraces(project.path, project.name)
+      }
+    } catch {
+      // Local dir doesn't exist yet — trigger import
+      await importAllTraces(project.path, project.name)
+    }
     const result = await indexProject(project.path, project.name)
     res.json({
       success: true,
