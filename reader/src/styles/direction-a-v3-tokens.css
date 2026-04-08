@@ -951,10 +951,12 @@ button, input, textarea, select, [role="tab"], [role="dialog"], fieldset {
   background: var(--bg);
 }
 
-/* Pre-dashboard topbar: matches dashboard topbar padding (22px)
-   for visual consistency across Login, ProjectPicker, and Dashboard screens. */
+/* Pre-dashboard topbar: match dashboard topbar exactly. */
 .auth-shell > .top {
   padding: 0 22px;
+  height: 48px;
+  min-height: 48px;
+  flex-shrink: 0;
 }
 .auth-center {
   flex: 1;
