@@ -7,6 +7,9 @@ import { Sidebar } from './Sidebar'
 import { Main } from './Main'
 import { RightRail, type RailTab } from './RightRail'
 import { SetPasscodeBanner } from './SetPasscodeBanner'
+import { ErrorBanner } from './primitives/ErrorBanner'
+import { ErrorDetailsModal } from './primitives/ErrorDetailsModal'
+import { Toast, ToastContainer } from './primitives/Toast'
 import { api } from '../lib/api'
 
 interface DashboardProps {
@@ -192,7 +195,26 @@ export function Dashboard({
   }, [filtered, selected, selectedId, handleSelect])
 
   const lastCapturedAt = traces[0]?.captured_at ?? null
-  const showBanner = errors.length > 0 || (!watcherConnected && !isLoading && !error)
+
+  // Error UX surfaces (Spec 4 §7):
+  //   1. Parse errors → compact banner with "View details" modal. Dismissable.
+  //   2. Watcher disconnect → toast (auto-hides when reconnected or after 8s).
+  //   3. Critical load error → inline under the <Main> region (unchanged).
+  const [errorsDismissed, setErrorsDismissed] = useState(false)
+  const [watcherToastDismissed, setWatcherToastDismissed] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+
+  // Reset the dismissed flags when the underlying state recovers, so a
+  // later error or disconnect re-surfaces instead of staying silenced.
+  useEffect(() => {
+    if (errors.length === 0) setErrorsDismissed(false)
+  }, [errors.length])
+  useEffect(() => {
+    if (watcherConnected) setWatcherToastDismissed(false)
+  }, [watcherConnected])
+
+  const showErrorBanner = errors.length > 0 && !errorsDismissed
+  const showWatcherToast = !watcherConnected && !isLoading && !error && !watcherToastDismissed
 
   return (
     <div
@@ -209,16 +231,24 @@ export function Dashboard({
         onLock={onLock}
       />
       {firstRun && <SetPasscodeBanner onSet={onPasscodeSet} />}
-      {showBanner && (
-        <div
-          className="banner"
-          role="status"
-          style={{ gridColumn: '1 / -1' }}
-        >
-          {errors.length > 0
-            ? `${errors.length} TRACE FILE(S) COULD NOT BE READ — ${errors.map((e) => e.file).join(', ')}`
-            : 'LIVE WATCHER DISCONNECTED — ATTEMPTING TO RECONNECT'}
-        </div>
+      {showErrorBanner && (
+        <ErrorBanner
+          variant="warning"
+          message={
+            errors.length === 1
+              ? `1 trace couldn't be read.`
+              : `${errors.length} traces couldn't be read.`
+          }
+          actionLabel="View details"
+          onAction={() => setShowErrorModal(true)}
+          onDismiss={() => setErrorsDismissed(true)}
+        />
+      )}
+      {showErrorModal && (
+        <ErrorDetailsModal
+          errors={errors}
+          onClose={() => setShowErrorModal(false)}
+        />
       )}
       <Sidebar
         traces={traces}
@@ -269,6 +299,16 @@ export function Dashboard({
       >
         ☰
       </button>
+      {showWatcherToast && (
+        <ToastContainer>
+          <Toast
+            variant="warning"
+            message="Live updates paused — reconnecting…"
+            onDismiss={() => setWatcherToastDismissed(true)}
+            autoDismissMs={0}
+          />
+        </ToastContainer>
+      )}
     </div>
   )
 }
