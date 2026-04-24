@@ -1,8 +1,8 @@
 {
-  "name": "alignmem-trace-reader",
-  "version": "1.0.0",
+  "name": "alignmink-dtp",
+  "version": "0.1.0",
   "private": true,
-  "description": "Localhost journal-style reader for Alignmink decision traces.",
+  "description": "Decision Journal — localhost reader for Alignmink Decision Trace Protocol (DTP) v0.1 traces.",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n server,client -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",

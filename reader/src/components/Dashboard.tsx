@@ -51,7 +51,8 @@ export function Dashboard({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [railWidth, setRailWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return DEFAULT_RAIL_WIDTH
-    const stored = parseInt(window.localStorage.getItem('alignmem.railWidth') ?? '', 10)
+    const raw = window.localStorage.getItem('decision-journal.railWidth') ?? window.localStorage.getItem('alignmem.railWidth') ?? ''
+    const stored = parseInt(raw, 10)
     if (Number.isFinite(stored) && stored >= MIN_RAIL_WIDTH) return stored
     return DEFAULT_RAIL_WIDTH
   })
@@ -69,7 +70,7 @@ export function Dashboard({
   // Persist rail width on every change. localStorage is fine at this frequency.
   useEffect(() => {
     try {
-      window.localStorage.setItem('alignmem.railWidth', String(railWidth))
+      window.localStorage.setItem('decision-journal.railWidth', String(railWidth))
     } catch {
       // ignore quota errors
     }
