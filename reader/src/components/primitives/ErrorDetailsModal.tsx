@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 // Modal disclosure for the dense technical text of a multi-error event.
 // The banner shows a one-line summary; this modal shows per-error rows
 // with a copy-to-clipboard button each. Press ESC or click outside to
 // close.
+//
+// Rendered via React portal to document.body so it escapes the .shell
+// grid layout and any ancestor stacking context. Without the portal,
+// the modal appeared visually constrained to the main content column.
 //
 // Spec: Product-Documentation/Specs/dtr/04-reader-ux.md §7.2
 
@@ -63,7 +68,16 @@ export function ErrorDetailsModal({
     }
   }
 
-  return (
+  // Lock background scroll while modal is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+
+  return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-dialog"
@@ -113,6 +127,7 @@ export function ErrorDetailsModal({
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

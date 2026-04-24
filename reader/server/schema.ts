@@ -7,13 +7,13 @@ import { z } from 'zod'
 
 export const traceStatusSchema = z.enum(['open', 'resolved', 'contested', 'archived', 'deferred', 'stale'])
 
-export const nodeTypeSchema = z.enum([
-  'intent',
-  'response',
-  'question',
-  'resolution',
-  'dissent'
-])
+// Open string to accommodate node-type vocabulary that evolves over
+// time. Real traces use values beyond the original five (intent /
+// response / question / resolution / dissent) — including 'decision',
+// 'problem', 'analysis', 'challenge', 'reframe', 'implementation'.
+// The reader's job is to render, not to gate-keep decision vocabulary.
+// Enums forced by this schema previously rejected ~10 valid traces.
+export const nodeTypeSchema = z.string()
 
 // Open string to accommodate 15+ roles including war_cabinet_priya, war_cabinet_marcus, etc.
 export const authorRoleSchema = z.string()
