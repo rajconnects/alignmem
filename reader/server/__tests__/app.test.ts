@@ -43,7 +43,9 @@ describe('auth', () => {
     const res = await request(app).get('/api/auth/status')
     expect(res.status).toBe(200)
     expect(res.body.data.firstRun).toBe(true)
-    expect(res.body.data.authed).toBe(false)
+    // First-run auto-authenticates so the project picker is immediately
+    // accessible; passcode setup is a non-blocking prompt in the dashboard.
+    expect(res.body.data.authed).toBe(true)
   })
 
   it('rejects setup with short passcode', async () => {
