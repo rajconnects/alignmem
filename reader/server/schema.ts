@@ -57,9 +57,15 @@ export const traceEdgeSchema = z.object({
 }).passthrough()
 
 // Accept both field name conventions:
-//   Engine spec:  status, category
+//   Engine spec:  status, category, session_id, opened_at, nodes[]
 //   Supabase/DB:  thread_status, decision_category
-// The transform normalizes to the spec names for the rest of the app.
+//   Document style (human-written): date, resolution, options_considered,
+//                                   context, implementation, implications
+//
+// Rather than gate-keep a single shape, the reader is permissive:
+// required fields are the bare minimum to render a card (id, topic);
+// everything else is optional with sensible defaults. The transform
+// normalizes to spec names for the rest of the app.
 const rawTraceSchema = z.object({
   id: z.string(),
   topic: z.string(),
@@ -70,12 +76,15 @@ const rawTraceSchema = z.object({
   category: z.string().optional(),
   decision_category: z.string().optional(),
   project: z.string().optional().default(''),
-  session_id: z.string(),
+  // session_id / opened_at / nodes are engine-spec requirements; human-
+  // written document-style traces omit them. Default to empty so the
+  // trace still imports and renders with available metadata.
+  session_id: z.string().optional().default(''),
   skill: z.string().optional(),
   company_id: z.unknown().optional(),
   cycle_id: z.unknown().optional(),
   spine_priority_id: z.unknown().optional(),
-  opened_at: z.string(),
+  opened_at: z.string().optional(),
   resolved_at: z.string().nullable().default(null),
   resolution_summary: z.string().nullable().default(null),
   revisit_trigger: z.string().nullable().default(null),
@@ -84,7 +93,9 @@ const rawTraceSchema = z.object({
   captured_at: z.string().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
-  nodes: z.array(traceNodeSchema),
+  // Document-style trace may carry a 'date' field as the single timestamp.
+  date: z.string().optional(),
+  nodes: z.array(traceNodeSchema).optional().default([]),
   edges: z.array(traceEdgeSchema).optional()
 }).passthrough()
 
@@ -92,7 +103,15 @@ export const decisionTraceSchema = rawTraceSchema.transform((data) => ({
   ...data,
   status: data.status ?? data.thread_status ?? 'open' as const,
   category: data.category ?? data.decision_category ?? '',
-  captured_at: data.captured_at ?? data.created_at ?? data.opened_at,
+  // captured_at falls back through every plausible timestamp field so
+  // every valid trace always has one. Document-style traces use `date`.
+  captured_at:
+    data.captured_at ??
+    data.created_at ??
+    data.opened_at ??
+    data.date ??
+    new Date().toISOString(),
+  opened_at: data.opened_at ?? data.date ?? data.created_at ?? data.captured_at ?? new Date().toISOString(),
 }))
 
 export type DecisionTraceSchema = z.output<typeof decisionTraceSchema>
