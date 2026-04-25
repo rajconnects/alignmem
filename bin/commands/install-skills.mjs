@@ -7,7 +7,7 @@
 // Spec: 03-capture-flow.md §3.
 
 import { spawn } from 'node:child_process'
-import { cp, mkdir, readFile, readdir, stat } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readFile, readdir, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -149,6 +149,36 @@ async function spawnRm(target) {
   await rm(target, { recursive: true, force: true })
 }
 
+async function installCowork({ packageRoot }) {
+  // Cowork needs two things from us:
+  //   1. The capture custom-instructions block (what to paste into the Project).
+  //   2. The engine bundle as an uploadable zip (Project knowledge file).
+  // Cowork has no filesystem we can write to, so we drop the zip in CWD and
+  // print the paste-ready instructions.
+  const zipSource = path.join(packageRoot, 'dist', 'engine.zip')
+  if (!existsSync(zipSource)) {
+    throw new Error(
+      `engine.zip not found at ${zipSource}. ` +
+      `Run 'npm run build:engine-zip' from the package root, or reinstall.`
+    )
+  }
+  const zipDest = path.join(process.cwd(), 'alignmink-dtp-engine.zip')
+  await copyFile(zipSource, zipDest)
+  const stats = await stat(zipDest)
+
+  process.stdout.write(`[install-skills] Wrote engine bundle:\n`)
+  process.stdout.write(`  ${zipDest} (${stats.size} bytes)\n\n`)
+  process.stdout.write(`Upload this zip to your Claude Cowork Project as a knowledge file,\n`)
+  process.stdout.write(`then paste the custom-instructions block below into the Project's\n`)
+  process.stdout.write(`"Custom instructions" field.\n\n`)
+
+  await printTemplate({
+    packageRoot,
+    templateName: 'cowork-custom-instructions.md',
+    surfaceLabel: 'Claude Cowork (Project custom instructions)'
+  })
+}
+
 async function printTemplate({ packageRoot, templateName, surfaceLabel }) {
   const tplPath = path.join(packageRoot, 'templates', templateName)
   if (!existsSync(tplPath)) {
@@ -191,11 +221,7 @@ export async function installSkillsCommand({ args, packageRoot }) {
       })
       return
     case 'cowork':
-      await printTemplate({
-        packageRoot,
-        templateName: 'cowork-custom-instructions.md',
-        surfaceLabel: 'Claude Cowork (Project custom instructions)'
-      })
+      await installCowork({ packageRoot })
       return
     case 'chatgpt':
       await printTemplate({

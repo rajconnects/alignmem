@@ -63,10 +63,8 @@ alignmem-decision-engine/
 ├── skills/
 │   ├── war-cabinet.md          ← War Cabinet skill
 │   └── [your-skill].md        ← Drop new skills here
-├── scripts/
-│   └── init.sh                 ← Directory bootstrapping
-└── references/
-    └── EXAMPLES.md             ← Worked examples
+└── scripts/
+    └── init.sh                 ← Directory bootstrapping
 ```
 
 ## Adding a New Skill

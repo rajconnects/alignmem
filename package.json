@@ -56,7 +56,8 @@
     "test:e2e": "playwright test",
     "lint:brand": "node scripts/brand-audit.mjs",
     "refresh-logos": "node scripts/refresh-logos.mjs",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+    "build:engine-zip": "node scripts/build-engine-zip.mjs",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run build:engine-zip"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
