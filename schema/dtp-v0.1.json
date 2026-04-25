@@ -44,22 +44,61 @@
     },
     "decision": {
       "type": "object",
-      "required": ["statement", "reasoning", "alternatives"],
+      "description": "The committed decision. v0.1.0: only `statement` is required. Earlier drafts included `reasoning` and `alternatives` here; both are deprecated in favor of nodes[] (§5.8 of PROTOCOL.md). Legacy traces with these fields still validate (additionalProperties true) but new producers SHOULD NOT emit them.",
+      "required": ["statement"],
       "properties": {
         "statement": { "type": "string", "minLength": 1, "maxLength": 500 },
-        "reasoning": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "reasoning": {
+          "type": "string",
+          "deprecated": true,
+          "description": "DEPRECATED. Use nodes[] (resolution node content) instead."
+        },
         "alternatives": {
           "type": "array",
-          "maxItems": 10,
+          "deprecated": true,
+          "description": "DEPRECATED. Use nodes[] of node_type 'response' instead.",
           "items": {
             "type": "object",
-            "required": ["option", "rejected_because"],
             "properties": {
-              "option": { "type": "string", "minLength": 1, "maxLength": 300 },
-              "rejected_because": { "type": "string", "minLength": 1, "maxLength": 1000 }
+              "option": { "type": "string" },
+              "rejected_because": { "type": "string" }
             }
           }
         }
+      },
+      "additionalProperties": true
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Canonical deliberation array. Multi-author intent → response → dissent → resolution turns. Aligns 1:1 with V1 SaaS decision_nodes table.",
+      "items": {
+        "type": "object",
+        "required": ["id", "node_type", "author_role", "author_name", "content", "sequence_order", "created_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "node_type": {
+            "type": "string",
+            "description": "Recommended values: intent | response | question | dissent | resolution. Open string — vocabulary may evolve."
+          },
+          "author_role": {
+            "type": "string",
+            "description": "Recommended values: founder, ceo, coo, cpo, cto, cfo, vp_*, chief_of_staff, advisor, team_member. Open string."
+          },
+          "author_name": { "type": "string", "minLength": 1 },
+          "content": { "type": "string", "minLength": 1 },
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "source": { "type": "string" },
+              "session": { "type": "string" },
+              "related_topics": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "sequence_order": { "type": "integer", "minimum": 1 },
+          "created_at": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": true
       }
     },
     "thread_id": {

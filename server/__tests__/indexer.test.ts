@@ -182,29 +182,16 @@ const dtpOnlyTrace: DecisionTraceSchema = {
   nodes: []
 }
 
-describe('derive() — DTP v0.1 shape', () => {
+describe('derive() — DTP v0.1 shape (canonical nodes)', () => {
+  // Single-author no-deliberation trace: nodes empty, decision present.
+  // Honest about there being no deliberation captured (turn_count = 0).
   it('derives participants from author.name when nodes empty', () => {
     const d = derive(dtpOnlyTrace, 'dtp.json')
     expect(d.participants).toEqual(['Arun Raj'])
   })
 
-  it('derives turn_count as 1 + alternatives.length', () => {
+  it('returns turn_count 0 when no deliberation captured (nodes empty)', () => {
     const d = derive(dtpOnlyTrace, 'dtp.json')
-    expect(d.turn_count).toBe(3) // 1 statement + 2 alternatives
-  })
-
-  it('handles a DTP trace with no alternatives (turn_count = 1)', () => {
-    const noAlts = {
-      ...dtpOnlyTrace,
-      decision: { ...dtpOnlyTrace.decision!, alternatives: [] }
-    }
-    const d = derive(noAlts, 'dtp.json')
-    expect(d.turn_count).toBe(1)
-  })
-
-  it('returns turn_count 0 for traces with neither nodes nor decision', () => {
-    const empty = { ...dtpOnlyTrace, decision: undefined, nodes: [] }
-    const d = derive(empty, 'dtp.json')
     expect(d.turn_count).toBe(0)
   })
 
@@ -226,34 +213,48 @@ describe('derive() — DTP v0.1 shape', () => {
   })
 })
 
-describe('derive() — mixed shape (engine + DTP)', () => {
-  // A trace with both legacy nodes AND DTP decision fields. Indexer
-  // should prefer node-derived participants (richer for engine traces)
-  // but still surface themes via topic_tags.
-  it('prefers node-derived participants when nodes present', () => {
-    const mixed: DecisionTraceSchema = {
-      ...baseTrace,
-      author: { name: 'Solo Author', role: 'ceo' },
-      themes: ['hybrid-shape']
+describe('derive() — DTP trace with canonical nodes deliberation', () => {
+  // The recommended shape — DTP fields + nodes[] for the deliberation.
+  it('uses nodes for participants and turn_count', () => {
+    const dtpWithNodes: DecisionTraceSchema = {
+      ...dtpOnlyTrace,
+      nodes: [
+        {
+          id: 'dn-1',
+          node_type: 'intent',
+          author_role: 'founder',
+          author_name: 'Arun',
+          content: 'What should we do?',
+          context: { source: 'conversation', session: 'x', related_topics: [] },
+          sequence_order: 1,
+          created_at: '2026-04-25T09:00:00Z'
+        },
+        {
+          id: 'dn-2',
+          node_type: 'response',
+          author_role: 'advisor',
+          author_name: 'Claude',
+          content: 'Option A rejected because...',
+          context: { source: 'conversation', session: 'x', related_topics: [] },
+          sequence_order: 2,
+          created_at: '2026-04-25T09:00:00Z'
+        },
+        {
+          id: 'dn-3',
+          node_type: 'resolution',
+          author_role: 'founder',
+          author_name: 'Arun',
+          content: 'Going with B.',
+          context: { source: 'conversation', session: 'x', related_topics: [] },
+          sequence_order: 3,
+          created_at: '2026-04-25T09:00:00Z'
+        }
+      ]
     }
-    const d = derive(mixed, 'mixed.json')
-    expect(d.participants).toEqual(['Arun', 'Claude']) // from nodes, not author
-    expect(d.topic_tags).toContain('hybrid-shape') // themes still surface
-  })
-
-  it('uses node count for turn_count, ignoring alternatives', () => {
-    const mixed: DecisionTraceSchema = {
-      ...baseTrace,
-      decision: {
-        statement: 'x',
-        reasoning: 'y',
-        alternatives: [
-          { option: 'a', rejected_because: 'b' },
-          { option: 'c', rejected_because: 'd' }
-        ]
-      }
-    }
-    const d = derive(mixed, 'mixed.json')
-    expect(d.turn_count).toBe(2) // node count, not 1 + 2
+    const d = derive(dtpWithNodes, 'dtp.json')
+    expect(d.participants).toEqual(['Arun', 'Claude'])
+    expect(d.turn_count).toBe(3)
+    // themes still surface in topic_tags
+    expect(d.topic_tags).toContain('protocol')
   })
 })

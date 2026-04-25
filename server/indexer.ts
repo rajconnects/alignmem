@@ -52,13 +52,11 @@ export function derive(trace: DecisionTraceSchema, fileName: string, now: Date =
     nodeParticipants.length > 0 ? nodeParticipants : dtpParticipants
   ))
 
-  // Turn count — engine: number of nodes. DTP: 1 (the decision) + number of
-  // alternatives considered. Empty trace: 0.
-  const turn_count = trace.nodes.length > 0
-    ? trace.nodes.length
-    : trace.decision
-      ? 1 + (trace.decision.alternatives?.length ?? 0)
-      : 0
+  // Turn count — number of deliberation turns in nodes[]. DTP and engine
+  // traces both use nodes[] as the canonical reasoning array, aligned with
+  // V1 SaaS decision_nodes. Single-author no-deliberation traces show 0
+  // turns (which is honest — there was no deliberation).
+  const turn_count = trace.nodes.length
 
   const duration_days =
     trace.resolved_at && trace.opened_at

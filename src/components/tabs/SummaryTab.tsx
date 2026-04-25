@@ -6,31 +6,21 @@ interface SummaryTabProps {
   trace: IndexedTrace
 }
 
-// Renders the trace's headline content. DTP v0.1 uses
-// decision.statement + decision.reasoning; engine traces use
-// resolution_summary. DTP wins if both present (cleaner separation
-// of decision vs reasoning); engine fallback covers legacy data.
+// Renders the trace's headline content. DTP v0.1: decision.statement is
+// the distilled commitment; the full reasoning lives in nodes[] (rendered
+// by ThreadTab). Engine traces fall back to resolution_summary.
 export function SummaryTab({ trace }: SummaryTabProps) {
   const related = trace.topic_tags.filter((t) => t !== trace.category)
   const decision = trace.decision
 
+  // Headline: prefer decision.statement (DTP), fall back to resolution_summary (engine).
+  const headline = decision?.statement ?? trace.resolution_summary
+
   return (
     <div>
-      {decision ? (
-        <>
-          <div className="summary-statement" style={{ marginBottom: 14 }}>
-            <ProseBlock text={decision.statement} />
-          </div>
-          {decision.reasoning && (
-            <div style={{ marginBottom: 16 }}>
-              <div className="summary-section-label">REASONING</div>
-              <ProseBlock text={decision.reasoning} />
-            </div>
-          )}
-        </>
-      ) : trace.resolution_summary ? (
-        <div style={{ marginBottom: 16 }}>
-          <ProseBlock text={trace.resolution_summary} />
+      {headline ? (
+        <div className="summary-statement" style={{ marginBottom: 16 }}>
+          <ProseBlock text={headline} />
         </div>
       ) : (
         <div className="summary-body">No decision summary yet.</div>
@@ -67,7 +57,7 @@ export function SummaryTab({ trace }: SummaryTabProps) {
         </div>
       )}
 
-      {/* Topic tags (legacy + derived) — only render if distinct from themes */}
+      {/* Topic tags (legacy + derived) — only show if distinct from themes */}
       {(trace.category || related.length > 0) && (
         <div className="chip-row">
           {trace.category && (

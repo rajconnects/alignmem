@@ -134,6 +134,7 @@ The required set is deliberately minimal. A valid v0.1 trace needs only six fiel
 | `captured_at` | string (ISO 8601) | **YES** | MUST include explicit timezone designator: `Z` (UTC) or numeric offset like `-07:00`. Local time without offset is NOT valid. |
 | `author` | object | **YES** | See §5.2. |
 | `decision` | object | **YES** | See §5.3. |
+| `nodes` | array<object> | RECOMMENDED | The canonical deliberation array — see §5.8. Required when multi-turn deliberation occurred; omit for single-author no-discussion captures. |
 | `thread_id` | string | OPTIONAL | Slug-cased (`[a-z0-9-]+`), 1–80 chars. If omitted, the trace is standalone. |
 | `session_id` | string | OPTIONAL | Reference to a session file. |
 | `captured_via` | string (enum) | OPTIONAL | One of: `claude-code`, `claude-chat`, `cowork`, `chatgpt`, `cli-direct`, `other`. Default: `other`. |
@@ -166,24 +167,15 @@ The required set is deliberately minimal. A valid v0.1 trace needs only six fiel
 
 ```json
 {
-  "statement": "string (1–500 chars, required)",
-  "reasoning": "string (1–4000 chars, required)",
-  "alternatives": [ /* array of Alternative objects, 0–10 items, required */ ]
+  "statement": "string (1–500 chars, required)"
 }
 ```
 
-- `statement` — single-sentence commitment. Plain text.
-- `reasoning` — why this decision was made. Multi-paragraph allowed.
-- `alternatives` — array of what was considered and rejected. Empty array is valid but discouraged.
+- `statement` — single-sentence commitment. Plain text. The distilled headline.
 
-#### 5.3.1 Alternative object
+The full deliberation that led to this decision — alternatives weighed, dissent voiced, trade-offs surfaced — lives in the **`nodes[]`** array (§5.8) which is the canonical reasoning framework. This aligns with the V1 SaaS database schema's `decision_nodes` table.
 
-```json
-{
-  "option": "string (1–300 chars, required)",
-  "rejected_because": "string (1–1000 chars, required)"
-}
-```
+> **Note on deprecated fields.** Earlier drafts of DTP v0.1 included `decision.reasoning` and `decision.alternatives` as parallel reasoning structures. Both are deprecated as of v0.1.0 in favor of `nodes[]`, which captures multi-author intent → response → dissent → resolution turns with full deliberation fidelity. Producers SHOULD NOT emit `decision.reasoning` or `decision.alternatives` in new traces; readers MUST tolerate them in legacy data without rendering as a parallel deliberation track.
 
 ### 5.4 Edge object
 
@@ -237,6 +229,63 @@ A trace MAY have zero themes.
 ```
 
 All three fields MAY be null at capture. The author fills them later via the reader. An outcome with all-null fields is valid and indicates "outcome not yet assessed."
+
+### 5.8 Nodes (the canonical deliberation array)
+
+`nodes[]` captures the multi-author conversation that led to the decision: intent stated → responses considered → dissent voiced → resolution committed. This is the **canonical reasoning framework** for DTP, aligned 1:1 with the Alignmink V1 SaaS `decision_nodes` table.
+
+A trace MAY omit `nodes[]` if it was a single-author no-deliberation capture (e.g., "log this decision: X"). When deliberation occurred, `nodes[]` is where it lives.
+
+```json
+"nodes": [
+  {
+    "id": "dn-1",
+    "node_type": "intent",
+    "author_role": "founder",
+    "author_name": "Arun",
+    "content": "Should we go PLG or sales-led for enterprise?",
+    "context": {
+      "source": "conversation",
+      "session": "GTM strategy review",
+      "related_topics": ["go-to-market", "enterprise"]
+    },
+    "sequence_order": 1,
+    "created_at": "2026-04-25T09:00:00Z"
+  },
+  { /* response node */ },
+  { /* dissent node, if any */ },
+  { /* resolution node */ }
+]
+```
+
+#### 5.8.1 Node fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | YES | Unique within the trace. Convention: `dn-<seq>`. |
+| `node_type` | string | YES | Recommended values: `intent`, `response`, `question`, `dissent`, `resolution`. Free-string at the schema level — vocabulary may evolve. |
+| `author_role` | string | YES | Recommended: `founder`, `ceo`, `coo`, `cpo`, `cto`, `cfo`, `vp_*`, `chief_of_staff`, `advisor`, `team_member`. Free-string. |
+| `author_name` | string | YES | Human-readable name of the speaker. |
+| `content` | string | YES | The utterance. Plain text or light prose. |
+| `context` | object | OPTIONAL | `{ source, session, related_topics[] }`. Free-form metadata about where this turn occurred. |
+| `sequence_order` | integer | YES | 1-indexed position in the deliberation. Sort by this. |
+| `created_at` | string (ISO 8601) | YES | When this turn was uttered. May equal `captured_at` for batch captures. |
+
+#### 5.8.2 Node type vocabulary
+
+| `node_type` | Use when |
+|-------------|----------|
+| `intent` | Initial question / situation / position the deliberation is about |
+| `response` | Reaction, analysis, an option being weighed |
+| `question` | A follow-up question raised within the deliberation |
+| `dissent` | Explicit pushback against the converging direction. Readers SHOULD render dissent prominently. |
+| `resolution` | The committed decision. Typically the final node. |
+
+The vocabulary is open — producers MAY use additional values (`analysis`, `challenge`, `reframe`, `implementation`, `decision`, `problem`) and readers MUST render them. The five values above are the recommended baseline.
+
+#### 5.8.3 Alignment with Alignmink V1 SaaS
+
+DTP `nodes[]` maps 1:1 to the V1 SaaS `decision_nodes` table. Field names match: `id`, `node_type`, `author_role`, `author_name`, `content`, `context`, `sequence_order`, `created_at`. A trace ingested into V1 SaaS lands as one `decision_threads` row plus N `decision_nodes` rows — no transformation required.
 
 ---
 
