@@ -8,7 +8,9 @@ import { createApp } from '../app.js'
 import { closeAllWatchers } from '../watcher.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const REAL_PROJECT = path.resolve(__dirname, '..', '..', '..', 'samples')
+// Resolves to <repo-root>/samples — server/__tests__ is two levels deep
+// from the repo root after the v0.1 restructure.
+const REAL_PROJECT = path.resolve(__dirname, '..', '..', 'samples')
 const COOKIE_SECRET = 'test-secret-32bytes-for-cookie-sign'
 const TEST_PASSCODE = 'supersecret'
 

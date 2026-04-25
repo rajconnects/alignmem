@@ -8,3 +8,11 @@ coverage/
 playwright-report/
 test-results/
 .vite/
+*.tsbuildinfo
+
+# npm pack output
+*.tgz
+
+# Editor metadata
+.idea/
+.vscode/

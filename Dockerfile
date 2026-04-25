@@ -1,15 +1,16 @@
-# Stage 1: Build
+# Decision Journal — Docker image
+# Two-stage: build with dev deps, run with prod deps only.
+
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY reader/package*.json ./
+COPY package*.json ./
 RUN npm ci
 
-COPY reader/ ./
+COPY . .
 RUN npm run build
 
-# Stage 2: Run
 FROM node:20-alpine AS run
 
 ENV NODE_ENV=production
@@ -20,7 +21,10 @@ COPY --from=build /app/package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/bin ./bin
+COPY --from=build /app/engine ./engine
+COPY --from=build /app/samples ./samples
 
 EXPOSE 3000
 
-CMD ["node", "dist/server/index.js"]
+CMD ["node", "bin/alignmink-dtp.mjs", "start", "--no-open"]
