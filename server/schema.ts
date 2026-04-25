@@ -1,21 +1,34 @@
 import { z } from 'zod'
 
 // Zod schema for the canonical DecisionTrace JSON files.
+//
+// The reader recognizes two trace shapes natively and one as a
+// permissive fallback:
+//
+//   1. DTP v0.1  — the canonical Alignmink Decision Trace Protocol.
+//                  See PROTOCOL.md. trace_id, title, decision.{statement,
+//                  reasoning, alternatives}, themes, revisit_triggers,
+//                  impact, attachments, etc.
+//
+//   2. Engine    — legacy nested-nodes shape from pre-v0.1 captures.
+//                  topic, nodes[], resolution_summary, revisit_trigger.
+//                  Kept first-class so existing user data renders.
+//
+//   3. Document  — human-written decision documents. Identified by
+//                  presence of `date` and absence of nodes/decision.
+//                  Read permissively; rendered with available fields.
+//
 // Validation happens at the filesystem boundary: any .json file in
 // <project>/alignmink-traces/threads/ that fails this schema is
 // reported to stderr and excluded from the indexer without crashing.
 
-export const traceStatusSchema = z.enum(['open', 'resolved', 'contested', 'archived', 'deferred', 'stale'])
+export const traceStatusSchema = z.enum(['open', 'resolved', 'contested', 'archived', 'deferred', 'stale', 'superseded'])
 
-// Open string to accommodate node-type vocabulary that evolves over
-// time. Real traces use values beyond the original five (intent /
-// response / question / resolution / dissent) — including 'decision',
-// 'problem', 'analysis', 'challenge', 'reframe', 'implementation'.
-// The reader's job is to render, not to gate-keep decision vocabulary.
-// Enums forced by this schema previously rejected ~10 valid traces.
+// Open string — node-type vocabulary evolves. The reader's job is to
+// render, not to gate-keep evolving decision vocabulary.
 export const nodeTypeSchema = z.string()
 
-// Open string to accommodate 15+ roles including war_cabinet_priya, war_cabinet_marcus, etc.
+// Open string to accommodate 15+ roles including war_cabinet_priya, etc.
 export const authorRoleSchema = z.string()
 
 export const traceNodeEntitiesSchema = z.object({
@@ -35,7 +48,6 @@ export const traceNodeSchema = z.object({
     source: z.string().default(''),
     session: z.string().default(''),
     related_topics: z.array(z.string()).default([]),
-    // Production traces may use these alternate field names
     related_docs: z.array(z.string()).optional(),
     pulse_week: z.string().nullable().optional(),
     trigger: z.string().nullable().optional()
@@ -47,38 +59,70 @@ export const traceNodeSchema = z.object({
 }).passthrough()
 
 export const traceEdgeSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
+  type: z.string().optional(),
   source_thread_id: z.string().optional(),
-  target_thread_id: z.string(),
-  edge_type: z.string(),
+  target_trace_id: z.string().optional(),
+  target_thread_id: z.string().optional(),
+  edge_type: z.string().optional(),
   rationale: z.string().optional(),
   description: z.string().optional(),
+  note: z.string().optional(),
   created_at: z.string().optional()
 }).passthrough()
 
-// Accept both field name conventions:
-//   Engine spec:  status, category, session_id, opened_at, nodes[]
-//   Supabase/DB:  thread_status, decision_category
-//   Document style (human-written): date, resolution, options_considered,
-//                                   context, implementation, implications
-//
-// Rather than gate-keep a single shape, the reader is permissive:
-// required fields are the bare minimum to render a card (id, topic);
-// everything else is optional with sensible defaults. The transform
-// normalizes to spec names for the rest of the app.
+// ── DTP v0.1 sub-schemas ─────────────────────────────────
+
+export const authorSchema = z.object({
+  name: z.string().min(1),
+  role: z.string(),
+  id: z.string().optional()
+}).passthrough()
+
+export const decisionAlternativeSchema = z.object({
+  option: z.string().min(1),
+  rejected_because: z.string().min(1)
+}).passthrough()
+
+export const decisionSchema = z.object({
+  statement: z.string().min(1),
+  reasoning: z.string().min(1),
+  alternatives: z.array(decisionAlternativeSchema).default([])
+}).passthrough()
+
+export const attachmentSchema = z.object({
+  kind: z.enum(['url', 'file_path', 'inline_text']),
+  value: z.string().min(1),
+  description: z.string().optional()
+}).passthrough()
+
+export const outcomeSchema = z.object({
+  observed_at: z.string().nullable().optional(),
+  observation: z.string().nullable().optional(),
+  success: z.boolean().nullable().optional()
+}).passthrough()
+
+// ── Top-level trace schema ───────────────────────────────
+
 const rawTraceSchema = z.object({
-  id: z.string(),
-  topic: z.string(),
-  // Accept either field name for status
+  // Identity — DTP uses trace_id+title; legacy uses id+topic. Either pair
+  // is acceptable; transform normalizes downstream.
+  id: z.string().optional(),
+  trace_id: z.string().optional(),
+  topic: z.string().optional(),
+  title: z.string().optional(),
+
+  // Lifecycle
   status: traceStatusSchema.optional(),
   thread_status: traceStatusSchema.optional(),
-  // Accept either field name for category
+
+  // Categorization (legacy + DTP)
   category: z.string().optional(),
   decision_category: z.string().optional(),
   project: z.string().optional().default(''),
-  // session_id / opened_at / nodes are engine-spec requirements; human-
-  // written document-style traces omit them. Default to empty so the
-  // trace still imports and renders with available metadata.
+  themes: z.array(z.string()).optional(),
+
+  // Engine-shape fields (all optional — DTP traces don't carry these)
   session_id: z.string().optional().default(''),
   skill: z.string().optional(),
   company_id: z.unknown().optional(),
@@ -88,31 +132,62 @@ const rawTraceSchema = z.object({
   resolved_at: z.string().nullable().default(null),
   resolution_summary: z.string().nullable().default(null),
   revisit_trigger: z.string().nullable().default(null),
-  outcome: z.string().nullable().default(null),
+  outcome: z.union([z.string(), outcomeSchema, z.null()]).default(null),
   outcome_assessed_at: z.string().nullable().default(null),
   captured_at: z.string().optional(),
+  captured_via: z.string().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
-  // Document-style trace may carry a 'date' field as the single timestamp.
+  // Document-style trace timestamp
   date: z.string().optional(),
   nodes: z.array(traceNodeSchema).optional().default([]),
-  edges: z.array(traceEdgeSchema).optional()
-}).passthrough()
+  edges: z.array(traceEdgeSchema).optional(),
 
-export const decisionTraceSchema = rawTraceSchema.transform((data) => ({
-  ...data,
-  status: data.status ?? data.thread_status ?? 'open' as const,
-  category: data.category ?? data.decision_category ?? '',
-  // captured_at falls back through every plausible timestamp field so
-  // every valid trace always has one. Document-style traces use `date`.
-  captured_at:
+  // DTP v0.1 fields — first-class so they typecheck and render.
+  schema_version: z.string().optional(),
+  author: authorSchema.optional(),
+  decision: decisionSchema.optional(),
+  revisit_triggers: z.array(z.string()).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  impact: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  attachments: z.array(attachmentSchema).optional(),
+  content_hash: z.string().optional(),
+  thread_id: z.string().optional(),
+  extensions: z.record(z.unknown()).optional()
+}).passthrough().refine(
+  (data) => Boolean(data.id || data.trace_id),
+  { message: 'either id or trace_id is required' }
+).refine(
+  (data) => Boolean(data.topic || data.title || data.decision?.statement),
+  { message: 'either topic, title, or decision.statement is required' }
+)
+
+export const decisionTraceSchema = rawTraceSchema.transform((data) => {
+  const id = data.id ?? data.trace_id!
+  const trace_id = data.trace_id ?? data.id!
+  const topic = data.topic ?? data.title ?? data.decision?.statement ?? '(untitled)'
+  const title = data.title ?? data.topic ?? data.decision?.statement ?? '(untitled)'
+  const captured_at =
     data.captured_at ??
     data.created_at ??
     data.opened_at ??
     data.date ??
-    new Date().toISOString(),
-  opened_at: data.opened_at ?? data.date ?? data.created_at ?? data.captured_at ?? new Date().toISOString(),
-}))
+    new Date().toISOString()
+  const opened_at =
+    data.opened_at ?? data.date ?? data.created_at ?? data.captured_at ?? captured_at
+
+  return {
+    ...data,
+    id,
+    trace_id,
+    topic,
+    title,
+    status: data.status ?? data.thread_status ?? 'open' as const,
+    category: data.category ?? data.decision_category ?? '',
+    captured_at,
+    opened_at,
+  }
+})
 
 export type DecisionTraceSchema = z.output<typeof decisionTraceSchema>
 

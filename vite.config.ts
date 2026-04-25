@@ -30,6 +30,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     testTimeout: 15_000,
-    include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx', 'server/__tests__/**/*.test.ts']
+    include: [
+      'src/**/__tests__/**/*.test.ts',
+      'src/**/__tests__/**/*.test.tsx',
+      'server/__tests__/**/*.test.ts',
+      'bin/**/__tests__/**/*.test.mjs'
+    ]
   }
 })

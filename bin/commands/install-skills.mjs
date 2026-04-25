@@ -16,7 +16,9 @@ import process from 'node:process'
 
 const VALID_TARGETS = ['claude-code', 'cursor', 'cowork', 'chatgpt']
 
-function parseArgs(args) {
+// Exported for unit tests. parseArgs is pure so it's safe to test
+// without touching the filesystem.
+export function parseArgs(args) {
   const out = { target: 'claude-code', force: false }
   for (let i = 0; i < args.length; i++) {
     const a = args[i]

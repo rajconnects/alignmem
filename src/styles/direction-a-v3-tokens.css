@@ -1572,6 +1572,140 @@ button, input, textarea, select, [role="tab"], [role="dialog"], fieldset {
 }
 
 /* ───────────────────────────────
+   DTP v0.1 RENDERING ADDITIONS
+   Right rail: themes, impact, confidence, attachments
+   Tabs: decision statement, alternatives cards, revisit-triggers list
+─────────────────────────────── */
+.summary-statement {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-100);
+  border-left: 2px solid var(--amber);
+  padding-left: 10px;
+}
+.summary-section-label,
+.rail-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-300);
+  margin-bottom: 6px;
+}
+.revisit-trigger-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.revisit-trigger-item {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-200);
+  padding-left: 10px;
+  position: relative;
+}
+.revisit-trigger-item::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+.theme-row {
+  margin-top: 12px;
+}
+
+/* Thread tab — DTP alternative cards */
+.thread-node-decision {
+  border-left: 2px solid var(--amber);
+}
+.thread-node-alternative {
+  border-left: 2px solid var(--text-300);
+  opacity: 0.92;
+}
+.thread-rejected-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-300);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.thread-rejected-body {
+  color: var(--text-200);
+  font-style: italic;
+}
+.thread-section-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+/* Attachments list in right rail */
+.rail-attachments {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+.attachment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.attachment-item {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.attachment-kind-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-300);
+  margin-right: 6px;
+}
+.attachment-link {
+  color: var(--amber);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--amber-border);
+}
+.attachment-link:hover,
+.attachment-link:focus-visible {
+  border-bottom-style: solid;
+}
+.attachment-path {
+  color: var(--text-200);
+}
+.attachment-value {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-300);
+  margin-top: 2px;
+  word-break: break-all;
+}
+.attachment-inline summary {
+  cursor: pointer;
+  color: var(--text-200);
+}
+.attachment-quote {
+  margin: 6px 0 0 0;
+  padding: 6px 10px;
+  border-left: 2px solid var(--border-str);
+  background: var(--bg-cell);
+  color: var(--text-200);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+/* ───────────────────────────────
    SCROLLBAR
 ─────────────────────────────── */
 ::-webkit-scrollbar { width: 3px; }

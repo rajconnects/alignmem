@@ -32,8 +32,22 @@ function statusColor(status: TraceStatus): string {
       return 'var(--orange)'
     case 'contested':
       return 'var(--red)'
+    case 'deferred':
+    case 'stale':
+    case 'superseded':
     case 'archived':
       return 'var(--text-300)'
+    default:
+      return 'var(--text-300)'
+  }
+}
+
+function impactColor(impact: 'low' | 'medium' | 'high' | 'critical'): string {
+  switch (impact) {
+    case 'critical': return 'var(--red)'
+    case 'high':     return 'var(--amber)'
+    case 'medium':   return 'var(--text-200)'
+    case 'low':      return 'var(--text-300)'
   }
 }
 
@@ -99,8 +113,8 @@ export function RightRail({
             ✕ CLOSE
           </button>
 
-          <div className="rail-eyebrow">DECISION TRACE · {trace.id}</div>
-          <h2 className="rail-title">{trace.topic}</h2>
+          <div className="rail-eyebrow">DECISION TRACE · {trace.trace_id ?? trace.id}</div>
+          <h2 className="rail-title">{trace.title ?? trace.topic}</h2>
 
           <div className="rail-meta" aria-label="Trace metadata">
             <div className="rail-meta-pair">
@@ -109,23 +123,73 @@ export function RightRail({
                 {trace.status}
               </span>
             </div>
+            {trace.impact && (
+              <div className="rail-meta-pair">
+                <span className="rail-meta-key">IMPACT</span>
+                <span className="rail-meta-val" style={{ color: impactColor(trace.impact) }}>
+                  {trace.impact}
+                </span>
+              </div>
+            )}
             <div className="rail-meta-pair">
-              <span className="rail-meta-key">OPENED</span>
-              <span className="rail-meta-val">{formatIsoDate(trace.opened_at)}</span>
+              <span className="rail-meta-key">CAPTURED</span>
+              <span className="rail-meta-val">{formatIsoDate(trace.captured_at)}</span>
             </div>
+            {trace.resolved_at && (
+              <div className="rail-meta-pair">
+                <span className="rail-meta-key">RESOLVED</span>
+                <span className="rail-meta-val">{formatIsoDate(trace.resolved_at)}</span>
+              </div>
+            )}
             <div className="rail-meta-pair">
-              <span className="rail-meta-key">RESOLVED</span>
-              <span className="rail-meta-val">{formatIsoDate(trace.resolved_at)}</span>
-            </div>
-            <div className="rail-meta-pair">
-              <span className="rail-meta-key">TURNS</span>
+              <span className="rail-meta-key">{trace.decision ? 'TURNS' : 'TURNS'}</span>
               <span className="rail-meta-val">{trace.turn_count}</span>
             </div>
             <div className="rail-meta-pair">
-              <span className="rail-meta-key">PARTICIPANTS</span>
-              <span className="rail-meta-val">{trace.participants.join(' · ')}</span>
+              <span className="rail-meta-key">{trace.author && trace.nodes.length === 0 ? 'AUTHOR' : 'PARTICIPANTS'}</span>
+              <span className="rail-meta-val">{trace.participants.join(' · ') || '—'}</span>
             </div>
+            {typeof trace.confidence === 'number' && (
+              <div className="rail-meta-pair">
+                <span className="rail-meta-key">CONFIDENCE</span>
+                <span className="rail-meta-val">{Math.round(trace.confidence * 100)}%</span>
+              </div>
+            )}
           </div>
+
+          {trace.attachments && trace.attachments.length > 0 && (
+            <div className="rail-attachments" aria-label="Attachments">
+              <div className="rail-section-label">ATTACHMENTS</div>
+              <ul className="attachment-list">
+                {trace.attachments.map((att, idx) => (
+                  <li key={idx} className="attachment-item">
+                    {att.kind === 'url' ? (
+                      <a
+                        href={att.value}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="attachment-link"
+                      >
+                        {att.description ?? att.value}
+                      </a>
+                    ) : att.kind === 'file_path' ? (
+                      <span className="attachment-path">
+                        <span className="attachment-kind-label">FILE</span> {att.description ?? att.value}
+                        <code className="attachment-value">{att.value}</code>
+                      </span>
+                    ) : (
+                      <details className="attachment-inline">
+                        <summary>
+                          <span className="attachment-kind-label">QUOTE</span> {att.description ?? 'inline text'}
+                        </summary>
+                        <blockquote className="attachment-quote">{att.value}</blockquote>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="rail-divider" />
 

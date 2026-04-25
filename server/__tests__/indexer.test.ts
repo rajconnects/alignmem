@@ -143,3 +143,118 @@ describe('indexProject()', () => {
     expect(result.errors.length).toBeGreaterThan(0)
   })
 })
+
+// ── DTP v0.1 derive() ────────────────────────────────────
+// Verifies the indexer treats DTP-shaped traces as first-class:
+// participants from author.name, turn_count from alternatives,
+// topic_tags from themes[].
+
+const dtpOnlyTrace: DecisionTraceSchema = {
+  id: '2026-04-25-dtp-trace',
+  trace_id: '2026-04-25-dtp-trace',
+  topic: 'Pure DTP v0.1 trace — no nodes',
+  title: 'Pure DTP v0.1 trace — no nodes',
+  status: 'resolved',
+  category: '',
+  project: '',
+  session_id: '',
+  opened_at: '2026-04-25T09:00:00Z',
+  resolved_at: null,
+  resolution_summary: null,
+  revisit_trigger: null,
+  outcome: null,
+  outcome_assessed_at: null,
+  captured_at: '2026-04-25T09:00:00Z',
+  schema_version: '0.1.0',
+  captured_via: 'claude-code',
+  author: { name: 'Arun Raj', role: 'ceo' },
+  decision: {
+    statement: 'Lock the protocol shape.',
+    reasoning: 'Trace-centric is cleaner for external implementers.',
+    alternatives: [
+      { option: 'Keep nested-nodes shape', rejected_because: 'too coupled to one capture flow' },
+      { option: 'Discriminated union', rejected_because: 'over-engineered for v0.1' }
+    ]
+  },
+  themes: ['protocol', 'internal'],
+  revisit_triggers: ['If a second implementation reports interop pain'],
+  impact: 'critical',
+  nodes: []
+}
+
+describe('derive() — DTP v0.1 shape (canonical nodes)', () => {
+  // Single-author no-deliberation trace: nodes empty, decision present.
+  // Honest about there being no deliberation captured (turn_count = 0).
+  it('derives participants from author.name when nodes empty', () => {
+    const d = derive(dtpOnlyTrace, 'dtp.json')
+    expect(d.participants).toEqual(['Arun Raj'])
+  })
+
+  it('returns turn_count 0 when no deliberation captured (nodes empty)', () => {
+    const d = derive(dtpOnlyTrace, 'dtp.json')
+    expect(d.turn_count).toBe(0)
+  })
+
+  it('combines themes into topic_tags', () => {
+    const d = derive(dtpOnlyTrace, 'dtp.json')
+    expect(d.topic_tags).toContain('protocol')
+    expect(d.topic_tags).toContain('internal')
+  })
+
+  it('deduplicates themes that overlap with category or related_topics', () => {
+    const overlap = {
+      ...dtpOnlyTrace,
+      category: 'protocol',
+      themes: ['protocol', 'team']
+    }
+    const d = derive(overlap, 'dtp.json')
+    expect(d.topic_tags.filter((t) => t === 'protocol')).toHaveLength(1)
+    expect(d.topic_tags).toContain('team')
+  })
+})
+
+describe('derive() — DTP trace with canonical nodes deliberation', () => {
+  // The recommended shape — DTP fields + nodes[] for the deliberation.
+  it('uses nodes for participants and turn_count', () => {
+    const dtpWithNodes: DecisionTraceSchema = {
+      ...dtpOnlyTrace,
+      nodes: [
+        {
+          id: 'dn-1',
+          node_type: 'intent',
+          author_role: 'founder',
+          author_name: 'Arun',
+          content: 'What should we do?',
+          context: { source: 'conversation', session: 'x', related_topics: [] },
+          sequence_order: 1,
+          created_at: '2026-04-25T09:00:00Z'
+        },
+        {
+          id: 'dn-2',
+          node_type: 'response',
+          author_role: 'advisor',
+          author_name: 'Claude',
+          content: 'Option A rejected because...',
+          context: { source: 'conversation', session: 'x', related_topics: [] },
+          sequence_order: 2,
+          created_at: '2026-04-25T09:00:00Z'
+        },
+        {
+          id: 'dn-3',
+          node_type: 'resolution',
+          author_role: 'founder',
+          author_name: 'Arun',
+          content: 'Going with B.',
+          context: { source: 'conversation', session: 'x', related_topics: [] },
+          sequence_order: 3,
+          created_at: '2026-04-25T09:00:00Z'
+        }
+      ]
+    }
+    const d = derive(dtpWithNodes, 'dtp.json')
+    expect(d.participants).toEqual(['Arun', 'Claude'])
+    expect(d.turn_count).toBe(3)
+    // themes still surface in topic_tags
+    expect(d.topic_tags).toContain('protocol')
+  })
+})
