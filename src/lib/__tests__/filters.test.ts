@@ -11,9 +11,13 @@ import {
 } from '../filters'
 
 function makeTrace(partial: Partial<IndexedTrace>): IndexedTrace {
+  const id = partial.id ?? 'dt-1'
+  const topic = partial.topic ?? 'Topic'
   return {
-    id: partial.id ?? 'dt-1',
-    topic: partial.topic ?? 'Topic',
+    id,
+    trace_id: partial.trace_id ?? id,
+    topic,
+    title: partial.title ?? topic,
     status: partial.status ?? 'resolved',
     category: partial.category ?? 'product_scope',
     project: 'P',

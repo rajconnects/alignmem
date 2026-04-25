@@ -4,13 +4,16 @@ import type { IndexedTrace, TraceStatus } from './types'
 
 export const SIGNAL_CHARS: Record<TraceStatus, string> = {
   resolved: '+',
-  open: '\u25CB', // ○
-  contested: '\u2715', // ✕
-  archived: '\u2014' // —
+  open: '○', // ○
+  contested: '✕', // ✕
+  archived: '—', // —
+  deferred: '⋯', // ⋯
+  stale: '—', // —
+  superseded: '→' // →
 }
 
 export function signalFor(status: TraceStatus): string {
-  return SIGNAL_CHARS[status]
+  return SIGNAL_CHARS[status] ?? '·'
 }
 
 export function statusColorVar(status: TraceStatus): string {
@@ -22,6 +25,11 @@ export function statusColorVar(status: TraceStatus): string {
     case 'contested':
       return 'var(--red)'
     case 'archived':
+    case 'deferred':
+    case 'stale':
+    case 'superseded':
+      return 'var(--text-300)'
+    default:
       return 'var(--text-300)'
   }
 }

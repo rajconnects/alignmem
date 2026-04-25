@@ -143,3 +143,117 @@ describe('indexProject()', () => {
     expect(result.errors.length).toBeGreaterThan(0)
   })
 })
+
+// ── DTP v0.1 derive() ────────────────────────────────────
+// Verifies the indexer treats DTP-shaped traces as first-class:
+// participants from author.name, turn_count from alternatives,
+// topic_tags from themes[].
+
+const dtpOnlyTrace: DecisionTraceSchema = {
+  id: '2026-04-25-dtp-trace',
+  trace_id: '2026-04-25-dtp-trace',
+  topic: 'Pure DTP v0.1 trace — no nodes',
+  title: 'Pure DTP v0.1 trace — no nodes',
+  status: 'resolved',
+  category: '',
+  project: '',
+  session_id: '',
+  opened_at: '2026-04-25T09:00:00Z',
+  resolved_at: null,
+  resolution_summary: null,
+  revisit_trigger: null,
+  outcome: null,
+  outcome_assessed_at: null,
+  captured_at: '2026-04-25T09:00:00Z',
+  schema_version: '0.1.0',
+  captured_via: 'claude-code',
+  author: { name: 'Arun Raj', role: 'ceo' },
+  decision: {
+    statement: 'Lock the protocol shape.',
+    reasoning: 'Trace-centric is cleaner for external implementers.',
+    alternatives: [
+      { option: 'Keep nested-nodes shape', rejected_because: 'too coupled to one capture flow' },
+      { option: 'Discriminated union', rejected_because: 'over-engineered for v0.1' }
+    ]
+  },
+  themes: ['protocol', 'internal'],
+  revisit_triggers: ['If a second implementation reports interop pain'],
+  impact: 'critical',
+  nodes: []
+}
+
+describe('derive() — DTP v0.1 shape', () => {
+  it('derives participants from author.name when nodes empty', () => {
+    const d = derive(dtpOnlyTrace, 'dtp.json')
+    expect(d.participants).toEqual(['Arun Raj'])
+  })
+
+  it('derives turn_count as 1 + alternatives.length', () => {
+    const d = derive(dtpOnlyTrace, 'dtp.json')
+    expect(d.turn_count).toBe(3) // 1 statement + 2 alternatives
+  })
+
+  it('handles a DTP trace with no alternatives (turn_count = 1)', () => {
+    const noAlts = {
+      ...dtpOnlyTrace,
+      decision: { ...dtpOnlyTrace.decision!, alternatives: [] }
+    }
+    const d = derive(noAlts, 'dtp.json')
+    expect(d.turn_count).toBe(1)
+  })
+
+  it('returns turn_count 0 for traces with neither nodes nor decision', () => {
+    const empty = { ...dtpOnlyTrace, decision: undefined, nodes: [] }
+    const d = derive(empty, 'dtp.json')
+    expect(d.turn_count).toBe(0)
+  })
+
+  it('combines themes into topic_tags', () => {
+    const d = derive(dtpOnlyTrace, 'dtp.json')
+    expect(d.topic_tags).toContain('protocol')
+    expect(d.topic_tags).toContain('internal')
+  })
+
+  it('deduplicates themes that overlap with category or related_topics', () => {
+    const overlap = {
+      ...dtpOnlyTrace,
+      category: 'protocol',
+      themes: ['protocol', 'team']
+    }
+    const d = derive(overlap, 'dtp.json')
+    expect(d.topic_tags.filter((t) => t === 'protocol')).toHaveLength(1)
+    expect(d.topic_tags).toContain('team')
+  })
+})
+
+describe('derive() — mixed shape (engine + DTP)', () => {
+  // A trace with both legacy nodes AND DTP decision fields. Indexer
+  // should prefer node-derived participants (richer for engine traces)
+  // but still surface themes via topic_tags.
+  it('prefers node-derived participants when nodes present', () => {
+    const mixed: DecisionTraceSchema = {
+      ...baseTrace,
+      author: { name: 'Solo Author', role: 'ceo' },
+      themes: ['hybrid-shape']
+    }
+    const d = derive(mixed, 'mixed.json')
+    expect(d.participants).toEqual(['Arun', 'Claude']) // from nodes, not author
+    expect(d.topic_tags).toContain('hybrid-shape') // themes still surface
+  })
+
+  it('uses node count for turn_count, ignoring alternatives', () => {
+    const mixed: DecisionTraceSchema = {
+      ...baseTrace,
+      decision: {
+        statement: 'x',
+        reasoning: 'y',
+        alternatives: [
+          { option: 'a', rejected_because: 'b' },
+          { option: 'c', rejected_because: 'd' }
+        ]
+      }
+    }
+    const d = derive(mixed, 'mixed.json')
+    expect(d.turn_count).toBe(2) // node count, not 1 + 2
+  })
+})

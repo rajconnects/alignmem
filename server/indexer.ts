@@ -43,18 +43,39 @@ export function bucketFor(captured: Date, now: Date = new Date()): AgeBucket {
 }
 
 export function derive(trace: DecisionTraceSchema, fileName: string, now: Date = new Date()): TraceDerived {
-  const participants = Array.from(
-    new Set(trace.nodes.map((n) => n.author_name).filter((s) => s.length > 0))
-  )
-  const turn_count = trace.nodes.length
+  // Participants — DTP traces have a single author; engine traces have many.
+  // Prefer node-derived participants when present (richer for engine shape),
+  // fall back to author.name for DTP-only traces.
+  const nodeParticipants = trace.nodes.map((n) => n.author_name).filter((s) => s.length > 0)
+  const dtpParticipants = trace.author?.name ? [trace.author.name] : []
+  const participants = Array.from(new Set(
+    nodeParticipants.length > 0 ? nodeParticipants : dtpParticipants
+  ))
+
+  // Turn count — engine: number of nodes. DTP: 1 (the decision) + number of
+  // alternatives considered. Empty trace: 0.
+  const turn_count = trace.nodes.length > 0
+    ? trace.nodes.length
+    : trace.decision
+      ? 1 + (trace.decision.alternatives?.length ?? 0)
+      : 0
+
   const duration_days =
     trace.resolved_at && trace.opened_at
       ? diffInDays(new Date(trace.opened_at), new Date(trace.resolved_at))
       : null
   const captured = new Date(trace.captured_at)
   const age_bucket = bucketFor(captured, now)
+
+  // Topic tags — combine DTP themes with engine related_topics + category.
+  // Themes are stakeholder-oriented; topics are subject-matter; both serve
+  // as tags for the lens UI in the current reader.
   const related = trace.nodes.flatMap((n) => n.context.related_topics)
-  const topic_tags = Array.from(new Set([trace.category, ...related])).filter((t) => t.length > 0)
+  const themes = trace.themes ?? []
+  const topic_tags = Array.from(
+    new Set([trace.category, ...related, ...themes])
+  ).filter((t) => t.length > 0)
+
   return {
     participants,
     turn_count,
