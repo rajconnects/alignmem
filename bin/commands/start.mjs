@@ -19,7 +19,7 @@ import process from 'node:process'
 // Exported for unit tests. parseArgs is pure so it's safe to test
 // without spawning the server.
 export function parseArgs(args) {
-  const out = { port: 3000, open: true }
+  const out = { port: 3000, host: '127.0.0.1', open: true }
   for (let i = 0; i < args.length; i++) {
     const a = args[i]
 
@@ -39,6 +39,12 @@ export function parseArgs(args) {
         throw new Error(`invalid --port value: ${next}`)
       }
       out.port = n
+    } else if (key === '--bind' || key === '-b') {
+      const next = inlineVal !== null ? inlineVal : args[++i]
+      if (typeof next !== 'string' || next.length === 0) {
+        throw new Error(`invalid --bind value: ${next}`)
+      }
+      out.host = next
     } else if (key === '--no-open') {
       out.open = false
     } else if (key === '--help' || key === '-h') {
@@ -55,6 +61,8 @@ function printStartHelp() {
 
 Options:
   --port, -p <number>   Port to listen on (default: 3000)
+  --bind, -b <host>     Interface to bind to (default: 127.0.0.1).
+                        Use 0.0.0.0 to expose on your LAN — not recommended.
   --no-open             Don't auto-open the browser
   --help, -h            Show this help
 
@@ -111,13 +119,28 @@ export async function startCommand({ args, packageRoot }) {
   await ensureBuilt(packageRoot)
 
   const serverPath = path.join(packageRoot, 'dist', 'server', 'index.js')
-  const url = `http://localhost:${opts.port}`
+  // Display URL is loopback for the user-facing log; HOST is what the
+  // server actually binds (only differs when the user passes --bind).
+  const displayHost =
+    opts.host === '0.0.0.0' || opts.host === '::' ? 'localhost' : opts.host
+  const url = `http://${displayHost}:${opts.port}`
 
   process.stdout.write(`[alignmink-dtp] Starting Decision Journal on ${url}\n`)
+  if (opts.host !== '127.0.0.1' && opts.host !== '::1' && opts.host !== 'localhost') {
+    process.stdout.write(
+      `[alignmink-dtp] ⚠ binding to ${opts.host} — reachable from your LAN. ` +
+        `Set a passcode immediately and consider unbinding when done.\n`
+    )
+  }
 
   const child = spawn(process.execPath, [serverPath], {
     cwd: packageRoot,
-    env: { ...process.env, NODE_ENV: 'production', PORT: String(opts.port) },
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      PORT: String(opts.port),
+      HOST: opts.host
+    },
     stdio: 'inherit'
   })
 
