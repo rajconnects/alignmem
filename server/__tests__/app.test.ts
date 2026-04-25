@@ -4,7 +4,7 @@ import os from 'node:os'
 import fs from 'node:fs/promises'
 import request from 'supertest'
 import { fileURLToPath } from 'node:url'
-import { createApp } from '../app.js'
+import { createApp, isLoopbackRequest } from '../app.js'
 import { closeAllWatchers } from '../watcher.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -70,6 +70,40 @@ describe('auth', () => {
     const { app } = await bootApp()
     const res = await request(app).get('/api/projects')
     expect(res.status).toBe(401)
+  })
+})
+
+describe('isLoopbackRequest', () => {
+  // Auto-auth on first run is the realistic LAN-takeover vector — guard
+  // it explicitly so the loopback gate isn't accidentally regressed.
+  const fake = (ip: string | undefined, remote?: string) =>
+    ({ ip, socket: { remoteAddress: remote } }) as unknown as Parameters<typeof isLoopbackRequest>[0]
+
+  it('accepts IPv4 loopback', () => {
+    expect(isLoopbackRequest(fake('127.0.0.1'))).toBe(true)
+  })
+  it('accepts IPv6 loopback', () => {
+    expect(isLoopbackRequest(fake('::1'))).toBe(true)
+  })
+  it('accepts IPv4-mapped IPv6 loopback', () => {
+    expect(isLoopbackRequest(fake('::ffff:127.0.0.1'))).toBe(true)
+  })
+  it('rejects LAN IPv4', () => {
+    expect(isLoopbackRequest(fake('192.168.1.42'))).toBe(false)
+  })
+  it('rejects public IPv4', () => {
+    expect(isLoopbackRequest(fake('8.8.8.8'))).toBe(false)
+  })
+  it('rejects link-local IPv6', () => {
+    expect(isLoopbackRequest(fake('fe80::1'))).toBe(false)
+  })
+  it('rejects empty / undefined', () => {
+    expect(isLoopbackRequest(fake(undefined))).toBe(false)
+    expect(isLoopbackRequest(fake(''))).toBe(false)
+  })
+  it('falls back to socket.remoteAddress when req.ip is undefined', () => {
+    expect(isLoopbackRequest(fake(undefined, '127.0.0.1'))).toBe(true)
+    expect(isLoopbackRequest(fake(undefined, '10.0.0.5'))).toBe(false)
   })
 })
 

@@ -9,28 +9,40 @@ import { parseArgs as parseStartArgs } from '../commands/start.mjs'
 import { parseArgs as parseInstallSkillsArgs } from '../commands/install-skills.mjs'
 
 describe('start parseArgs', () => {
-  it('returns defaults with no args', () => {
-    expect(parseStartArgs([])).toEqual({ port: 3000, open: true })
+  it('returns defaults with no args (binds loopback by default)', () => {
+    expect(parseStartArgs([])).toEqual({ port: 3000, host: '127.0.0.1', open: true })
   })
 
   it('accepts --port N (space-separated)', () => {
-    expect(parseStartArgs(['--port', '4000'])).toEqual({ port: 4000, open: true })
+    expect(parseStartArgs(['--port', '4000'])).toEqual({ port: 4000, host: '127.0.0.1', open: true })
   })
 
   it('accepts --port=N (equals-separated)', () => {
-    expect(parseStartArgs(['--port=4000'])).toEqual({ port: 4000, open: true })
+    expect(parseStartArgs(['--port=4000'])).toEqual({ port: 4000, host: '127.0.0.1', open: true })
   })
 
   it('accepts -p shortform', () => {
-    expect(parseStartArgs(['-p', '5000'])).toEqual({ port: 5000, open: true })
+    expect(parseStartArgs(['-p', '5000'])).toEqual({ port: 5000, host: '127.0.0.1', open: true })
   })
 
   it('accepts --no-open', () => {
-    expect(parseStartArgs(['--no-open'])).toEqual({ port: 3000, open: false })
+    expect(parseStartArgs(['--no-open'])).toEqual({ port: 3000, host: '127.0.0.1', open: false })
   })
 
   it('combines --port=N and --no-open', () => {
-    expect(parseStartArgs(['--port=3457', '--no-open'])).toEqual({ port: 3457, open: false })
+    expect(parseStartArgs(['--port=3457', '--no-open'])).toEqual({ port: 3457, host: '127.0.0.1', open: false })
+  })
+
+  it('accepts --bind <host> (space-separated)', () => {
+    expect(parseStartArgs(['--bind', '0.0.0.0'])).toMatchObject({ host: '0.0.0.0' })
+  })
+
+  it('accepts --bind=<host> (equals-separated)', () => {
+    expect(parseStartArgs(['--bind=192.168.1.10'])).toMatchObject({ host: '192.168.1.10' })
+  })
+
+  it('accepts -b shortform', () => {
+    expect(parseStartArgs(['-b', '::'])).toMatchObject({ host: '::' })
   })
 
   it('sets help on --help', () => {

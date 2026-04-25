@@ -31,6 +31,16 @@ import {
   setupBodySchema
 } from './schema.js'
 
+// A request is loopback if its remote address is the local machine.
+// Express normalizes IPv4-mapped IPv6 ("::ffff:127.0.0.1") so we match
+// all three common shapes. Loopback callers cannot be a remote attacker,
+// so it's safe to issue a session cookie to them on first run.
+// Exported for unit testing.
+export function isLoopbackRequest(req: Pick<Request, 'ip' | 'socket'>): boolean {
+  const ip = req.ip ?? req.socket?.remoteAddress ?? ''
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+}
+
 // createApp returns a configured Express app. Exported so integration
 // tests can spin up the app without binding to a port.
 export async function createApp(options: { cookieSecret: string }): Promise<Express> {
@@ -43,10 +53,13 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
   app.get('/api/auth/status', async (req, res) => {
     const authed = req.signedCookies?.[SESSION_COOKIE_NAME] === 'ok'
     const firstRun = await isFirstRun()
-    // On first run (no passcode set), auto-authenticate so the user
-    // sees the project picker immediately. The passcode setup is
-    // deferred to a non-blocking prompt inside the dashboard.
-    if (firstRun && !authed) {
+    // On first run (no passcode set), auto-authenticate the local user
+    // so they see the project picker immediately. Restricted to loopback
+    // — a LAN peer who races the user to this endpoint must NOT be granted
+    // a session. The passcode setup remains a non-blocking nudge in the
+    // dashboard (see SetPasscodeBanner) so first-run UX stays frictionless
+    // for the actual local user.
+    if (firstRun && !authed && isLoopbackRequest(req)) {
       issueSessionCookie(res)
       res.json({ success: true, data: { authed: true, firstRun: true } })
       return

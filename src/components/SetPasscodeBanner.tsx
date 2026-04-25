@@ -36,11 +36,29 @@ export function SetPasscodeBanner({ onSet }: SetPasscodeBannerProps) {
     }
   }
 
+  // Tooltip text spelling out *why* — without this, CEOs dismiss the
+  // banner reflexively. The reader binds to loopback by default, so the
+  // realistic risk only materializes if they passed --bind 0.0.0.0 or
+  // share the device. Naming both keeps the warning honest.
+  const warningTooltip =
+    'No passcode set. Anyone with access to this machine — or this network ' +
+    'if you bound the reader to your LAN with --bind — can read your ' +
+    'decision traces and add new project folders. Set a passcode to lock ' +
+    'the reader behind a credential.'
+
   return (
     <div className="passcode-banner" style={{ gridColumn: '1 / -1' }}>
       {!expanded ? (
         <div className="passcode-banner-row">
-          <span className="passcode-banner-text">
+          <span
+            className="passcode-banner-warning"
+            role="img"
+            aria-label="Warning"
+            title={warningTooltip}
+          >
+            ⚠
+          </span>
+          <span className="passcode-banner-text" title={warningTooltip}>
             SECURE YOUR SESSION — SET A PASSCODE TO LOCK THIS READER
           </span>
           <button
@@ -54,7 +72,8 @@ export function SetPasscodeBanner({ onSet }: SetPasscodeBannerProps) {
             type="button"
             className="passcode-banner-dismiss"
             onClick={() => setDismissed(true)}
-            aria-label="Dismiss"
+            aria-label="Dismiss for this session"
+            title="Dismiss for this session — banner returns on next reload until you set a passcode"
           >
             SKIP
           </button>
