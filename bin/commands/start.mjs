@@ -20,17 +20,26 @@ function parseArgs(args) {
   const out = { port: 3000, open: true }
   for (let i = 0; i < args.length; i++) {
     const a = args[i]
-    if (a === '--port' || a === '-p') {
-      const next = args[i + 1]
+
+    // Accept both --port=value and --port value forms.
+    let key = a
+    let inlineVal = null
+    if (a.startsWith('--') && a.includes('=')) {
+      const eqIdx = a.indexOf('=')
+      key = a.slice(0, eqIdx)
+      inlineVal = a.slice(eqIdx + 1)
+    }
+
+    if (key === '--port' || key === '-p') {
+      const next = inlineVal !== null ? inlineVal : args[++i]
       const n = Number.parseInt(next, 10)
       if (!Number.isFinite(n) || n < 1 || n > 65535) {
         throw new Error(`invalid --port value: ${next}`)
       }
       out.port = n
-      i++
-    } else if (a === '--no-open') {
+    } else if (key === '--no-open') {
       out.open = false
-    } else if (a === '--help' || a === '-h') {
+    } else if (key === '--help' || key === '-h') {
       out.help = true
     } else {
       throw new Error(`unknown option for 'start': ${a}`)

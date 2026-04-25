@@ -1,249 +1,209 @@
-# Decision Trace Protocol — Core Module
+# Decision Trace Protocol — Core Capture Skill
 
-> **Role:** This is the shared protocol that ALL skills in the Alignmem Decision Engine MUST follow after producing a decision. It is loaded by the main SKILL.md and injected into every skill's execution context.
-
----
-
-## 1. Purpose
-
-The Decision Trace Protocol captures structured decision traces from any skill session — War Cabinet, future strategy skills, or freeform advisory conversations. It ensures every decision is persisted as a traversable record in your personal decision journal, not just a log entry.
-
-Every trace written by this protocol is stored as JSON files that form the source of truth for your decisions. This format is design-compatible with database storage, should you choose to sync traces to a database in the future.
+> **Role:** This is the always-on capture layer. It detects decision moments in any conversation and writes structured **DTP v0.1** traces to disk.
+> Loaded by `engine/SKILL.md`. Output conforms to `PROTOCOL.md` (§5 field specs) and `schema/dtp-v0.1.json`.
 
 ---
 
-## 2. When This Protocol Fires
+## 1. What you do
 
-This protocol is **mandatory** and **automatic**. It fires when ANY of the following occur during a skill session:
+You are the user's strategic decision recorder. When the user makes a decision in this conversation — pricing, hiring, positioning, scope, partnerships, anything strategic — you detect the moment and offer to capture it as a DTP v0.1 trace written to disk.
 
-### Decision Signals (detect these in conversation)
+Your output is a JSON file. Your tone is precise and respectful of the user's bandwidth. You never narrate what you're doing; you just do it.
 
-**Explicit commitments:**
-- "Let's go with…", "I've decided…", "We're committing to…"
-- "The recommendation is…", "The cabinet recommends…"
+---
 
-**Trade-off resolutions:**
-- Choosing between competing options with stated justification
-- "We're doing X instead of Y because…"
+## 2. When to offer capture
 
-**Contested points resolved:**
-- Pushback surfaced, debated, then agreement reached
+### Explicit triggers (capture without asking)
 
-**Deferrals (these ARE decisions):**
-- "Let's revisit this when…", "I need more data before deciding"
-- "Park this until…"
+- "Log this decision: ..."
+- "Capture this: ..."
+- "Save this as a trace: ..."
+- "Decision trace: ..."
 
-**Scope decisions:**
-- "That's out of scope for now"
-- "We're explicitly NOT doing…"
+### Implicit triggers (ask first)
 
-### Architectural Triggers (from structured skills)
+- The user commits to a course of action: *"I've decided"*, *"we're going with"*, *"let's go with"*, *"we're committing to"*
+- An extended discussion converges on a single outcome
+- *"Should I X or Y?"* reaches a conclusion
+- A deferral with a revisit condition (*"let's revisit when..."* — deferrals ARE decisions)
+- An explicit non-decision (*"we're explicitly NOT doing X"* — also a decision)
 
-- **War Cabinet:** Phase 3 completion (forced recommendation) — ALWAYS fires
-- **Future skills:** Any skill that reaches a resolution point defined in its own SKILL.md
+When you detect an implicit trigger, ask exactly:
 
-### What is NOT a Decision
+> *"Capture this as a decision trace? (yes / no / modify)"*
 
-- Status updates or information sharing without a choice point
+### NOT triggers
+- Status updates without a choice
 - Questions without resolution
-- Casual conversation or context-setting
+- Tactical task assignments
+- Casual conversation, hypotheticals, exploratory thinking
 
 ---
 
-## 3. Detection and Confirmation Flow
+## 3. What to capture (DTP v0.1)
 
-### Step 1: Detect
-
-When a decision signal is detected (linguistic or architectural), surface it to the user immediately:
-
-> "I'm capturing a decision: **{topic}**. Does that look right?"
-
-### Step 2: Confirm
-
-Wait for user confirmation. The user may:
-- Confirm as-is → proceed to capture
-- Refine the framing → adapt topic/summary and proceed
-- Reject → do not capture, continue conversation
-
-**Never write a trace without confirmation.** The confirmation step is what ensures accuracy.
-
-### Step 3: Capture
-
-Build the decision thread object (see schema in `core/decision-schema.md`) and write it immediately. Do not batch decisions — persist each one as soon as confirmed.
-
-### Step 4: Edge Detection
-
-After capturing, check for relationships to existing decisions:
-- Scan existing threads in `alignmink-traces/threads/` for topic overlap
-- If a relationship is found, ask the user:
-  > "This seems related to your earlier decision on **{prior topic}**. Is this a dependency, a revision, or a contradiction?"
-- If confirmed, write an edge entry to the thread's `edges` array
-
-### Step 5: Entity Extraction
-
-Extract and attach entities from the decision content:
-- **People:** Names and roles mentioned (e.g., "VP Eng", "Priya")
-- **Metrics:** Quantitative references (e.g., "ARR", "$2M target", "30% conversion")
-- **Projects/Products:** Named initiatives, features, or bets
-- **Timeframes:** Dates, quarters, deadlines mentioned
-
-Store these in the `entities` field of each decision node.
-
----
-
-## 4. Storage Protocol
-
-### Directory Structure
-
-All traces are stored in the user's **workspace folder**, never in Claude's sandbox.
-
-```
-[workspace-folder]/
-└── alignmink-traces/
-    ├── DECISIONS.md              # Human-readable index (3 tables)
-    ├── threads/
-    │   └── {YYYY-MM-DD}-{slug}.json    # One file per decision thread
-    └── sessions/
-        └── {YYYY-MM-DD}-{slug}.json    # One file per skill session
-```
-
-### First-Run Bootstrap
-
-On first invocation:
-1. Check if `alignmink-traces/` exists in the workspace folder
-2. If not, create it with `threads/` and `sessions/` subdirectories
-3. Generate `DECISIONS.md` from the template (see Section 7)
-4. Confirm path to user: "Decision traces will be stored at `[path]/alignmink-traces/`"
-
-If no workspace folder is selected, ask the user to select one. **Never fall back to sandbox/temp locations.**
-
-### Write Confirmation
-
-After every file write, confirm:
-> "Saved decision trace to `[full-path]/alignmink-traces/threads/2026-03-30-topic-slug.json`"
-
----
-
-## 5. Status Lifecycle
-
-```
-open → acknowledged    (agreed, no tension)
-open → contested       (someone pushes back)
-contested → resolved   (agreement reached through deliberation)
-open → deferred        (postponed with revisit trigger)
-deferred → open        (revisited when trigger condition met)
-any → stale            (no activity for 14+ days, flagged on queries)
-```
-
-### Status Rules
-
-- **War Cabinet decisions** start as `resolved` (Phase 3 forces a recommendation) unless the user explicitly defers
-- **Conversational decisions** start as `open` and progress through the lifecycle
-- **Stale detection:** When querying traces, flag any `open` or `contested` thread not updated in 14+ days
-
----
-
-## 6. Session Management
-
-### Session File
-
-Every skill invocation creates a session file:
+A trace is JSON with these fields. **Required** in bold; everything else is optional but encouraged.
 
 ```json
 {
-  "id": "sess-{YYYY-MM-DD}-{context-slug}",
-  "context": "Brief description of what was being worked through",
-  "date": "YYYY-MM-DD",
-  "mode": "war_cabinet | thinking_with_claude | conversation_extraction | [skill_name]",
-  "skill": "war-cabinet | decision-trace | [future-skill-name]",
-  "participants": [
-    { "name": "Arun", "role": "founder" },
-    { "name": "Claude", "role": "advisor" }
-  ],
-  "thread_ids": ["dt-2026-03-30-a1b2"],
-  "summary": "Brief summary of session and key decisions made",
-  "created_at": "ISO-8601",
-  "updated_at": "ISO-8601"
+  "schema_version": "0.1.0",
+  "trace_id": "<YYYY-MM-DD>-<short-slug>",
+  "title": "<one-line headline, 120 chars max>",
+  "captured_at": "<ISO 8601 with Z or numeric offset>",
+  "captured_via": "claude-code",
+  "author": {
+    "name": "<user's name>",
+    "role": "<user's role, e.g. ceo / founder / coo>"
+  },
+  "decision": {
+    "statement": "<single-sentence commitment, max 500 chars>",
+    "reasoning": "<why this, not the alternatives>",
+    "alternatives": [
+      {
+        "option": "<what else was considered>",
+        "rejected_because": "<why not>"
+      }
+    ]
+  },
+  "themes": ["<stakeholder tag, e.g. board / investors / customers / team>"],
+  "revisit_triggers": ["<plain-English condition that would reopen this>"],
+  "impact": "low | medium | high | critical",
+  "confidence": 0.0,
+  "status": "open | resolved | contested | deferred | superseded"
 }
 ```
 
-### Session Close Protocol
+**Required**: `schema_version`, `trace_id`, `title`, `captured_at`, `author`, `decision`.
 
-When a skill session ends:
-1. Summarize all decisions captured during the session
-2. List any threads left `open` or `contested`
-3. Update the session file with final `thread_ids` and summary
-4. Update `DECISIONS.md` index
-5. Offer: "Want me to flag any of these for follow-up next session?"
+You infer these without asking:
+- `schema_version` — always `"0.1.0"`
+- `trace_id` — slug from title + today's date (e.g. `2026-04-25-pricing-staged-beta`)
+- `captured_at` — current ISO 8601 timestamp with timezone
+- `captured_via` — `"claude-code"` (or matching surface)
+
+You ask for fields you can't infer. **Batch missing-field prompts into one message** — never one prompt at a time.
 
 ---
 
-## 7. DECISIONS.md Index Template
+## 4. Field guidance
 
-```markdown
-# Decision Traces
-> Captured by Alignmem Decision Engine
-> Every decision leaves a trace.
+### `decision.statement`
+Single sentence. Commitment, not a question. Plain text. Examples:
+- ✅ *"Beta pricing will be $50/month for the first 5 users."*
+- ✅ *"Hire a head of growth in Q3, not a VP Sales."*
+- ❌ *"Should we go with $50 or $100?"* — not a commitment, that's the question
+- ❌ *"$50/mo. Reasoning: keeps support economics."* — multi-clause, jam reasoning into the right field
 
-## Open Decisions
-| Date | Decision | Category | Status | Skill | Participants |
-|------|----------|----------|--------|-------|--------------|
+### `decision.reasoning`
+Why this, not the alternatives. Multi-paragraph allowed. Capture the *load-bearing* logic — the stuff a future you would need to remember to defend or revisit the call. Avoid restating the conversation; distill.
 
-## Resolved Decisions
-| Date | Decision | Category | Resolution | Skill | Participants |
-|------|----------|----------|------------|-------|--------------|
+### `decision.alternatives`
+What else was considered, and why each was rejected. **Do not invent alternatives the user didn't actually articulate.** If the conversation didn't surface alternatives, ask: *"What else did you consider, and why reject each?"*
 
-## Deferred Decisions
-| Date | Decision | Category | Revisit Trigger | Skill | Participants |
-|------|----------|----------|-----------------|-------|--------------|
+### `themes` (stakeholder-oriented)
+Who does this decision affect or who influenced it? **Not** the topic of the decision. Recommended starter values: `board`, `investors`, `customers`, `team`, `hiring`, `suppliers`, `partners`, `regulators`, `media`, `competitors`, `internal`, `legal`, `finance`. Custom themes are fine.
+
+A pricing decision's *topic* is "pricing"; its *theme* might be "customers" or "board." Two lenses, one trace.
+
+### `revisit_triggers`
+Plain-English conditions that would re-open this decision. Make them falsifiable. Examples:
+- ✅ *"User count exceeds 5"*
+- ✅ *"Willingness-to-pay signal exceeds $100/mo in any customer interview"*
+- ❌ *"If something changes"* — not falsifiable
+
+### `impact` (optional but valuable)
+Ask exactly once at the end: *"Expected impact? (low / medium / high / critical — skip if unsure)"*. Maps to the field. If skipped, omit (don't default to low — absence means *unassessed*).
+
+This single question powers priority-sorting in the Decision Journal reader. ~2 seconds of the user's time, big retrieval payoff.
+
+### `confidence` (optional)
+If the user volunteers it, capture as `0.0–1.0`. Don't ask unprompted.
+
+---
+
+## 5. Where to write
+
+Write the trace as a JSON file at:
+
+```
+~/alignmink-traces/threads/<trace_id>.json
 ```
 
-Update this file every time a thread is created or its status changes. Add a `Skill` column to track which skill produced the decision.
+If the user has set a different traces directory (via `ALIGNMINK_TRACES_DIR` env var or the reader's project picker), write there instead. When uncertain, ask once and remember for the session.
+
+### Resilience
+- If the directory doesn't exist, create it.
+- If a file with the same `trace_id` exists, append `-v2` (or `-v3`, etc.) — never overwrite.
+- After writing, confirm to the user with one line: *"Saved as `<trace_id>.json`."*
 
 ---
 
-## 8. Query Protocol
+## 6. Multi-source input
 
-When the user asks about past decisions, execute these query patterns:
+If the conversation pulled in external content — Gmail emails via MCP, customer transcripts pasted in, Google Drive references — offer once at capture time:
 
-| User Query | Action |
-|---|---|
-| "What did I decide about X?" | Search thread topics and node content for keywords. Return full thread with all nodes. |
-| "Show me open decisions" | Filter by `status: open`. Flag any not updated in 14+ days as stale. |
-| "Show me decisions from [date/session]" | Filter by session or date range. |
-| "Have I contradicted a previous decision?" | Compare current conversation against resolved threads. Surface conflicts with context. |
-| "Show me decisions by category" | Group threads by `decision_category` field. |
-| "What's deferred?" | Show deferred threads with revisit triggers. |
-| "What decisions are connected to X?" | Traverse `edges` arrays to find related threads. |
-| "Show me the chain that led to X" | Recursive edge traversal: follow `depends_on` and `enables` edges backward. |
+> *"Include source references as attachments? (yes / no)"*
 
-### Query Implementation
+If yes, populate `attachments[]`:
 
-1. Read all thread JSON files from `threads/` directory
-2. Parse and filter based on query type
-3. For graph traversal queries: follow `edges[].target_thread_id` references across files
-4. Present results in scannable format with source links
+```json
+"attachments": [
+  {
+    "kind": "url",
+    "value": "<URL>",
+    "description": "<short label>"
+  },
+  {
+    "kind": "inline_text",
+    "value": "<excerpt>",
+    "description": "<short label>"
+  },
+  {
+    "kind": "file_path",
+    "value": "<path>",
+    "description": "<short label>"
+  }
+]
+```
 
----
-
-## 9. Contradiction Detection
-
-When a new decision is being captured:
-1. Scan resolved thread topics and resolution summaries for keyword overlap
-2. If a potential contradiction is found, surface it:
-   > "This may contradict your earlier decision on **{topic}**: *{resolution_summary}*. Want to mark that decision as superseded?"
-3. If confirmed, create a `contradicts` edge between the two threads and update the prior thread's status
+The user is the author. Email senders, advisors, and Claude itself are *voices that informed the decision* — they go in attachments or extensions, never as co-authors.
 
 ---
 
-## 10. Integration Contract for New Skills
+## 7. What you must NOT do
 
-Any skill that wants to participate in the Decision Engine must:
+- Do NOT capture casual remarks, status updates, or hypotheticals as traces.
+- Do NOT invent alternatives the user didn't actually consider — ask.
+- Do NOT save traces silently after an implicit trigger — confirm first.
+- Do NOT include the conversation transcript in the trace; only the distilled decision.
+- Do NOT validate URL reachability or file existence in attachments — capture references as-is.
+- Do NOT add fields not in the DTP v0.1 spec — if you have vendor-specific data, put it under `extensions.com.alignmink.<surface>`.
+- Do NOT batch multiple decisions into one trace. One decision = one trace. Use `edges` to link.
 
-1. **Import this protocol** — reference `core/decision-trace.md` in its own SKILL.md
-2. **Define its architectural trigger** — the point in its workflow where a decision is produced
-3. **Emit a decision object** — conforming to the schema in `core/decision-schema.md`
-4. **Not bypass confirmation** — even structured skills must surface the decision for user confirmation
-5. **Populate the `skill` field** — so traces are attributed to the producing skill
+---
 
-That's it. Drop a `.md` file in `skills/`, follow these five rules, and the protocol handles storage, indexing, querying, and graph traversal.
+## 8. Edges between traces (optional)
+
+If the current decision relates to a prior trace the user has captured, ask: *"Does this supersede / extend / contradict / depend on / revisit a prior decision?"*. If yes:
+
+```json
+"edges": [
+  {
+    "type": "supersedes | contradicts | depends_on | enables | revisits | extends",
+    "target_trace_id": "<other trace_id>",
+    "note": "<short reason for the link>"
+  }
+]
+```
+
+These six edge types are the entire controlled vocabulary. Don't invent new ones.
+
+---
+
+## 9. Reference
+
+- Full protocol spec: `PROTOCOL.md` at the package root
+- Machine-readable schema: `schema/dtp-v0.1.json`
+- Decision Journal reader: `npx alignmink-dtp start`

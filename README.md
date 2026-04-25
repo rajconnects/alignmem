@@ -40,10 +40,10 @@ Works with [Docker](#docker) too.
 |---|---|---|
 | **Claude Code** | ✅ Premier — silent, zero overhead | `npx alignmink-dtp install-skills` |
 | **Cursor / Windsurf** | ✅ Direct | `npx alignmink-dtp install-skills --target=cursor` |
-| **Claude Cowork** | ⚠️ Download JSON + upload to reader | Custom instructions block |
-| **Claude Chat** | ⚠️ Download JSON + upload | Custom instructions block |
-| **ChatGPT** | ⚠️ Download JSON + upload | Custom instructions block |
-| **CLI (non-AI fallback)** | ✅ Direct | `npx alignmink-dtp capture` |
+| **Claude Cowork** | ⚠️ Download JSON + upload to reader | `npx alignmink-dtp install-skills --target=cowork` |
+| **Claude Chat** | ⚠️ Download JSON + upload | (use Cowork or ChatGPT block) |
+| **ChatGPT** | ⚠️ Download JSON + upload | `npx alignmink-dtp install-skills --target=chatgpt` |
+| **CLI (non-AI fallback)** | 🚧 Coming soon | `npx alignmink-dtp capture` |
 
 ---
 

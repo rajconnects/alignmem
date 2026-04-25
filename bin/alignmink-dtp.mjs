@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { startCommand } from './commands/start.mjs'
+import { installSkillsCommand } from './commands/install-skills.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -28,7 +29,7 @@ Usage:
 
 Commands:
   start [--port N] [--no-open]    Launch the Decision Journal reader (default: port 3000)
-  install-skills                  (coming soon) Install capture skills into Claude Code
+  install-skills [--target=...]   Install capture skills (claude-code | cursor | cowork | chatgpt)
   import <file|folder>            (coming soon) Import DTP traces from disk
   capture                         (coming soon) Interactive non-AI capture wizard
   migrate                         (coming soon) Convert pre-v0.1 traces to DTP v0.1
@@ -83,6 +84,8 @@ async function main(argv) {
       await startCommand({ args: args.slice(1), packageRoot: PACKAGE_ROOT })
       return
     case 'install-skills':
+      await installSkillsCommand({ args: args.slice(1), packageRoot: PACKAGE_ROOT })
+      return
     case 'import':
     case 'capture':
     case 'migrate':
