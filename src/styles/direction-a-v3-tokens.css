@@ -1093,8 +1093,299 @@ button, input, textarea, select, [role="tab"], [role="dialog"], fieldset {
 }
 
 /* ───────────────────────────────
-   BANNER (SSE / watcher errors)
+   ERROR BANNER (persistent top-of-viewport)
+   Compact. Always dismissible. Reserved for errors
+   needing explicit user action. Transient/recoverable
+   events use .toast instead.
+   Spec: 04-reader-ux.md §7.1.3
 ─────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 22px;
+  min-height: 48px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid transparent;
+}
+.error-banner-warning {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border-bottom-color: var(--amber-border);
+}
+.error-banner-critical {
+  background: var(--red-bg);
+  color: var(--red);
+  border-bottom-color: var(--red);
+}
+.error-banner-message {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--text-100);
+}
+.error-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.error-banner-action {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-100);
+  background: transparent;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.error-banner-warning .error-banner-action { border: 1px solid var(--amber); }
+.error-banner-critical .error-banner-action { border: 1px solid var(--red); }
+.error-banner-warning .error-banner-action:hover,
+.error-banner-warning .error-banner-action:focus-visible {
+  background: var(--amber);
+  color: var(--bg);
+}
+.error-banner-critical .error-banner-action:hover,
+.error-banner-critical .error-banner-action:focus-visible {
+  background: var(--red);
+  color: var(--bg);
+}
+.error-banner-dismiss {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: var(--text-300);
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+.error-banner-dismiss:hover,
+.error-banner-dismiss:focus-visible { color: var(--text-100); }
+
+/* ───────────────────────────────
+   TOAST (transient, bottom-right)
+   Spec: 04-reader-ux.md §7.1.1
+─────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-mid);
+  pointer-events: auto;
+  animation: toast-in 0.18s ease-out;
+}
+.toast-info {
+  border-left: 3px solid var(--text-200);
+}
+.toast-warning {
+  border-left: 3px solid var(--amber);
+}
+.toast-success {
+  border-left: 3px solid var(--green, var(--amber));
+}
+.toast-message {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-100);
+  flex: 1 1 auto;
+}
+.toast-dismiss {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-300);
+  background: transparent;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.toast-dismiss:hover,
+.toast-dismiss:focus-visible { color: var(--text-100); }
+@keyframes toast-in {
+  from { transform: translateX(12px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+/* ───────────────────────────────
+   MODAL (ErrorDetailsModal — dense technical content)
+   Spec: 04-reader-ux.md §7.2
+─────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-dialog {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-str);
+  width: min(640px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-mid);
+}
+.modal-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-100);
+  margin: 0;
+}
+.modal-count {
+  color: var(--text-300);
+  font-weight: 400;
+  margin-left: 6px;
+}
+.modal-close {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: var(--text-300);
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover,
+.modal-close:focus-visible { color: var(--text-100); }
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.error-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-cell);
+}
+.error-list-file {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--amber);
+  word-break: break-all;
+}
+.error-list-message {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-200);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.error-list-copy {
+  align-self: flex-start;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-300);
+  background: transparent;
+  border: 1px solid var(--border-str);
+  padding: 3px 8px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.error-list-copy:hover,
+.error-list-copy:focus-visible {
+  color: var(--text-100);
+  border-color: var(--text-200);
+}
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-mid);
+}
+.modal-footer-btn,
+.modal-footer-btn-primary {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  cursor: pointer;
+  background: transparent;
+}
+.modal-footer-btn {
+  color: var(--text-200);
+  border: 1px solid var(--border-str);
+}
+.modal-footer-btn:hover,
+.modal-footer-btn:focus-visible {
+  color: var(--text-100);
+  border-color: var(--text-200);
+}
+.modal-footer-btn-primary {
+  color: var(--bg);
+  background: var(--amber);
+  border: 1px solid var(--amber);
+}
+.modal-footer-btn-primary:hover,
+.modal-footer-btn-primary:focus-visible {
+  background: transparent;
+  color: var(--amber);
+}
+
+/* Legacy .banner class is retained so any non-Dashboard caller still
+   renders without layout collapse. Use .error-banner going forward. */
 .banner {
   padding: 8px 18px;
   font-family: 'IBM Plex Mono', monospace;

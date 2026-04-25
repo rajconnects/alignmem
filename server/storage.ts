@@ -6,7 +6,7 @@ import crypto from 'node:crypto'
 // Small filesystem abstraction for the reader's state directory.
 // Defaults to ~/.alignmem-reader; overridable via $ALIGNMEM_HOME for tests.
 // Stored files:
-//   - .passcode         bcrypt hash of the unlock passcode
+//   - .passcode         scrypt hash of the unlock passcode (v0.1+)
 //   - cookie-secret     random 32-byte hex, used to sign session cookies
 //   - projects.json     list of { name, path, last_seen, trace_count }
 

@@ -8,7 +8,9 @@ import { createApp } from '../app.js'
 import { closeAllWatchers } from '../watcher.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const REAL_PROJECT = path.resolve(__dirname, '..', '..', '..', 'samples')
+// Resolves to <repo-root>/samples — server/__tests__ is two levels deep
+// from the repo root after the v0.1 restructure.
+const REAL_PROJECT = path.resolve(__dirname, '..', '..', 'samples')
 const COOKIE_SECRET = 'test-secret-32bytes-for-cookie-sign'
 const TEST_PASSCODE = 'supersecret'
 
@@ -43,7 +45,9 @@ describe('auth', () => {
     const res = await request(app).get('/api/auth/status')
     expect(res.status).toBe(200)
     expect(res.body.data.firstRun).toBe(true)
-    expect(res.body.data.authed).toBe(false)
+    // First-run auto-authenticates so the project picker is immediately
+    // accessible; passcode setup is a non-blocking prompt in the dashboard.
+    expect(res.body.data.authed).toBe(true)
   })
 
   it('rejects setup with short passcode', async () => {

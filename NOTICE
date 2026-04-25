@@ -1,0 +1,46 @@
+alignmink-dtp
+Copyright 2026 Alignmink
+
+This product includes software developed by Alignmink.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+
+-------------------------------------------------------------------------------
+
+This product bundles or depends on the following third-party libraries.
+Each retains its own license; the summary below is informational.
+
+Runtime dependencies:
+- express          MIT License
+- chokidar         MIT License
+- react, react-dom MIT License
+- zod              MIT License
+- cookie-parser    MIT License
+- dotenv           BSD-2-Clause
+
+Typography:
+- IBM Plex Mono, IBM Plex Sans   SIL Open Font License 1.1
+- Zilla Slab                      SIL Open Font License 1.1
+
+Development dependencies (not distributed with the compiled product):
+- TypeScript, Vite, vitest, Playwright, ESLint, Prettier — each under their
+  respective licenses (primarily MIT / Apache-2.0).
+
+-------------------------------------------------------------------------------
+
+The Alignmink Decision Trace Protocol (DTP) v0.1 is an open specification.
+Implementations by third parties are encouraged under Apache License 2.0.
+Full spec: ./PROTOCOL.md
+
+The names "Alignmink" and "Decision Journal" are trademarks of Alignmink and
+are not licensed under this file. See §6 of the Apache License.

@@ -1,0 +1,134 @@
+// `alignmink-dtp start` — boot the Decision Journal reader.
+//
+// Runs the prebuilt server (dist/server/index.js) as a child process,
+// waits for it to bind to the requested port, opens the user's browser
+// (unless --no-open), and forwards SIGINT/SIGTERM cleanly so Ctrl+C
+// shuts down the server.
+//
+// First-run handles two failure modes:
+//   1. dist/ missing — typical after `npm install` from a registry that
+//      published only source. Run the build before spawning.
+//   2. node_modules missing — possible if user cloned and ran without
+//      install. Detected by missing dist/server, treated like (1).
+
+import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+
+function parseArgs(args) {
+  const out = { port: 3000, open: true }
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]
+    if (a === '--port' || a === '-p') {
+      const next = args[i + 1]
+      const n = Number.parseInt(next, 10)
+      if (!Number.isFinite(n) || n < 1 || n > 65535) {
+        throw new Error(`invalid --port value: ${next}`)
+      }
+      out.port = n
+      i++
+    } else if (a === '--no-open') {
+      out.open = false
+    } else if (a === '--help' || a === '-h') {
+      out.help = true
+    } else {
+      throw new Error(`unknown option for 'start': ${a}`)
+    }
+  }
+  return out
+}
+
+function printStartHelp() {
+  process.stdout.write(`Usage: alignmink-dtp start [options]
+
+Options:
+  --port, -p <number>   Port to listen on (default: 3000)
+  --no-open             Don't auto-open the browser
+  --help, -h            Show this help
+
+The Decision Journal will be available at http://localhost:<port>.
+On first run you'll be asked to set a passcode.
+`)
+}
+
+function openBrowser(url) {
+  const platform = process.platform
+  const cmd =
+    platform === 'darwin' ? 'open' :
+    platform === 'win32' ? 'start' :
+    'xdg-open'
+  try {
+    spawn(cmd, [url], { stdio: 'ignore', detached: true }).unref()
+  } catch {
+    // Best-effort. If the user has no GUI, they'll just open manually.
+  }
+}
+
+async function ensureBuilt(packageRoot) {
+  const distServer = path.join(packageRoot, 'dist', 'server', 'index.js')
+  if (existsSync(distServer)) return
+  process.stdout.write('[alignmink-dtp] First run — building (this happens once)...\n')
+  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+  await new Promise((resolve, reject) => {
+    const child = spawn(npm, ['run', 'build'], {
+      cwd: packageRoot,
+      stdio: 'inherit'
+    })
+    child.on('exit', (code) => {
+      if (code === 0) resolve()
+      else reject(new Error(`build failed with exit code ${code}`))
+    })
+  })
+}
+
+export async function startCommand({ args, packageRoot }) {
+  let opts
+  try {
+    opts = parseArgs(args)
+  } catch (err) {
+    process.stderr.write(`alignmink-dtp start: ${err.message}\n`)
+    printStartHelp()
+    process.exit(1)
+  }
+
+  if (opts.help) {
+    printStartHelp()
+    return
+  }
+
+  await ensureBuilt(packageRoot)
+
+  const serverPath = path.join(packageRoot, 'dist', 'server', 'index.js')
+  const url = `http://localhost:${opts.port}`
+
+  process.stdout.write(`[alignmink-dtp] Starting Decision Journal on ${url}\n`)
+
+  const child = spawn(process.execPath, [serverPath], {
+    cwd: packageRoot,
+    env: { ...process.env, NODE_ENV: 'production', PORT: String(opts.port) },
+    stdio: 'inherit'
+  })
+
+  // Forward signals so Ctrl+C cleanly stops the server.
+  const forward = (sig) => {
+    if (!child.killed) child.kill(sig)
+  }
+  process.on('SIGINT', () => forward('SIGINT'))
+  process.on('SIGTERM', () => forward('SIGTERM'))
+
+  child.on('exit', (code, signal) => {
+    if (signal) {
+      process.exit(0)
+    }
+    process.exit(code ?? 0)
+  })
+
+  // Open the browser after a short delay so the server has time to bind.
+  // The reader logs `listening on http://localhost:<port>` once ready;
+  // we don't parse stdio here (would require capturing stdio piped) — a
+  // 1.2s delay is the pragmatic compromise.
+  if (opts.open) {
+    setTimeout(() => openBrowser(url), 1200)
+  }
+}

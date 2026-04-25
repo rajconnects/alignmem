@@ -9,6 +9,7 @@ import {
   isFirstRun,
   issueSessionCookie,
   requireSession,
+  SESSION_COOKIE_NAME,
   setupPasscode,
   verifyPasscode
 } from './auth.js'
@@ -40,7 +41,7 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
 
   // ── Auth ──────────────────────────────────────────────
   app.get('/api/auth/status', async (req, res) => {
-    const authed = req.signedCookies?.alignmem_session === 'ok'
+    const authed = req.signedCookies?.[SESSION_COOKIE_NAME] === 'ok'
     const firstRun = await isFirstRun()
     // On first run (no passcode set), auto-authenticate so the user
     // sees the project picker immediately. The passcode setup is

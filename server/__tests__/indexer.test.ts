@@ -10,7 +10,9 @@ import type { DecisionTraceSchema } from '../schema.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // The repo ships with sample traces; point the tests at the real folder
 // so we exercise actual schema data from production decision capture.
-const REAL_PROJECT = path.resolve(__dirname, '..', '..', '..', 'samples')
+// Resolves to <repo-root>/samples — server/__tests__ is two levels deep
+// from the repo root after the v0.1 restructure.
+const REAL_PROJECT = path.resolve(__dirname, '..', '..', 'samples')
 const REAL_PROJECT_NAME = path.basename(REAL_PROJECT)
 
 let testHome: string

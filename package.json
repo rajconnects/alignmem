@@ -1,0 +1,88 @@
+{
+  "name": "alignmink-dtp",
+  "version": "0.1.0",
+  "description": "Decision Journal — localhost reader for Alignmink Decision Trace Protocol (DTP) v0.1 traces.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Alignmink",
+  "homepage": "https://alignmink.ai/decision-protocol",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajconnects/alignmink-dtp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rajconnects/alignmink-dtp/issues"
+  },
+  "keywords": [
+    "decision",
+    "decision-trace",
+    "decision-journal",
+    "dtp",
+    "alignmink",
+    "leadership",
+    "ceo",
+    "claude",
+    "claude-code",
+    "local-first"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "alignmink-dtp": "bin/alignmink-dtp.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "engine",
+    "samples",
+    "schema",
+    "templates",
+    "LICENSE",
+    "NOTICE",
+    "PROTOCOL.md",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "vite",
+    "build": "vite build && tsc -p server/tsconfig.json",
+    "start": "node bin/alignmink-dtp.mjs start",
+    "start:server": "cross-env NODE_ENV=production node dist/server/index.js",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server/tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "lint:brand": "node scripts/brand-audit.mjs",
+    "refresh-logos": "node scripts/refresh-logos.mjs",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/supertest": "^6.0.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "jsdom": "^24.1.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.15.0",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0"
+  }
+}
