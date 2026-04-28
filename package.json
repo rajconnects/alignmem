@@ -1,6 +1,6 @@
 {
   "name": "alignmink-dtp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Decision Journal — localhost reader for Alignmink Decision Trace Protocol (DTP) v0.1 traces.",
   "type": "module",
   "license": "Apache-2.0",
@@ -37,6 +37,7 @@
     "engine",
     "samples",
     "schema",
+    "scripts",
     "templates",
     "LICENSE",
     "NOTICE",

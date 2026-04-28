@@ -1,6 +1,6 @@
 ---
 name: alignmink-decision-engine
-skill_version: 0.3.0
+skill_version: 0.3.1
 description: >
   A modular strategic decision engine for founders and leaders. Routes to
   specialized skills (War Cabinet, future strategy tools) while enforcing a
