@@ -1,6 +1,6 @@
 {
   "name": "alignmink-dtp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Decision Journal — localhost reader for Alignmink Decision Trace Protocol (DTP) v0.1 traces.",
   "type": "module",
   "license": "Apache-2.0",
@@ -57,6 +57,7 @@
     "lint:brand": "node scripts/brand-audit.mjs",
     "refresh-logos": "node scripts/refresh-logos.mjs",
     "build:engine-zip": "node scripts/build-engine-zip.mjs",
+    "postinstall": "node scripts/postinstall-hint.mjs",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run build:engine-zip"
   },
   "dependencies": {

@@ -1,43 +1,41 @@
 #!/usr/bin/env node
 // alignmink-dtp — CLI entry point.
 //
-// Routes argv to subcommand handlers. v0.1 implements `start`; other
-// commands stub with a coming-soon message so users discover the
-// surface without surprise. Help and version always work.
+// Routes argv to subcommand handlers. Bare invocation runs `doctor` so
+// the CEO sees their install state without having to know the help flag.
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { readFileSync } from 'node:fs'
 import { startCommand } from './commands/start.mjs'
 import { installSkillsCommand } from './commands/install-skills.mjs'
+import { doctorCommand } from './commands/doctor.mjs'
+import { updateCommand } from './commands/update.mjs'
+import { getPackageVersion, getSkillVersion, PROTOCOL_VERSION } from './lib/versions.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const PACKAGE_ROOT = path.resolve(__dirname, '..')
 
-function readPackageJson() {
-  const raw = readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8')
-  return JSON.parse(raw)
-}
-
 function printHelp() {
-  const pkg = readPackageJson()
-  process.stdout.write(`alignmink-dtp ${pkg.version} — Decision Journal CLI
+  const version = getPackageVersion(PACKAGE_ROOT) ?? '?'
+  process.stdout.write(`alignmink-dtp ${version} — Decision Journal CLI
 
 Usage:
+  alignmink-dtp                   Show install status (same as 'doctor')
   alignmink-dtp <command> [options]
 
 Commands:
   start [--port N] [--no-open]    Launch the Decision Journal reader (default: port 3000)
   install-skills [--target=...]   Install capture skills (claude-code | cursor | cowork | chatgpt)
+  doctor                          Show package/skill/protocol versions and any fix command
+  update                          Update the Claude Code skill to match the installed CLI
   import <file|folder>            (coming soon) Import DTP traces from disk
   capture                         (coming soon) Interactive non-AI capture wizard
   migrate                         (coming soon) Convert pre-v0.1 traces to DTP v0.1
-  doctor                          (coming soon) Diagnose install issues
   eject                           (coming soon) Remove skills, daemon; preserve traces
 
 Options:
-  --version, -v                   Print package and protocol versions
+  --version, -v                   Print package, skill, and protocol versions
   --help, -h                      Show this help
 
 Documentation:
@@ -47,11 +45,11 @@ Documentation:
 }
 
 function printVersion() {
-  const pkg = readPackageJson()
-  // Protocol version is independent of package version; track here until
-  // wired into a generated metadata file.
-  const protocolVersion = '0.1.0'
-  process.stdout.write(`alignmink-dtp ${pkg.version} (DTP ${protocolVersion})\n`)
+  const pkgVersion = getPackageVersion(PACKAGE_ROOT) ?? '?'
+  const skillVersion = getSkillVersion(path.join(PACKAGE_ROOT, 'engine', 'SKILL.md')) ?? '?'
+  process.stdout.write(`package  ${pkgVersion}\n`)
+  process.stdout.write(`skill    ${skillVersion}\n`)
+  process.stdout.write(`protocol ${PROTOCOL_VERSION}\n`)
 }
 
 function unknownCommand(name) {
@@ -70,12 +68,20 @@ async function main(argv) {
   const args = argv.slice(2)
   const first = args[0]
 
-  if (first === undefined || first === '--help' || first === '-h' || first === 'help') {
+  if (first === '--help' || first === '-h' || first === 'help') {
     printHelp()
     return
   }
   if (first === '--version' || first === '-v' || first === 'version') {
     printVersion()
+    return
+  }
+
+  // Bare invocation → doctor. A non-tech user typing just `alignmink-dtp`
+  // gets actionable status instead of a wall of help.
+  if (first === undefined) {
+    await doctorCommand({ args: [], packageRoot: PACKAGE_ROOT })
+    process.stdout.write(`Run 'alignmink-dtp --help' to see all commands.\n`)
     return
   }
 
@@ -86,10 +92,15 @@ async function main(argv) {
     case 'install-skills':
       await installSkillsCommand({ args: args.slice(1), packageRoot: PACKAGE_ROOT })
       return
+    case 'doctor':
+      await doctorCommand({ args: args.slice(1), packageRoot: PACKAGE_ROOT })
+      return
+    case 'update':
+      await updateCommand({ args: args.slice(1), packageRoot: PACKAGE_ROOT })
+      return
     case 'import':
     case 'capture':
     case 'migrate':
-    case 'doctor':
     case 'eject':
       comingSoon(first)
       return

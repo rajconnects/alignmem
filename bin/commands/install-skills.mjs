@@ -6,8 +6,7 @@
 //
 // Spec: 03-capture-flow.md §3.
 
-import { spawn } from 'node:child_process'
-import { copyFile, cp, mkdir, readFile, readdir, stat } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readFile, readdir, rename, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -102,13 +101,16 @@ async function countFiles(dir) {
   return n
 }
 
-async function installClaudeCode({ packageRoot, force }) {
+// Exported for tests. `homeDir` is injectable so tests can run against a
+// tmpdir without touching the real ~/.claude. In production it defaults
+// to the OS home — callers don't need to pass it.
+export async function installClaudeCode({ packageRoot, force, homeDir = os.homedir() }) {
   const sourceDir = path.join(packageRoot, 'engine')
   if (!existsSync(sourceDir)) {
     throw new Error(`engine/ not found at ${sourceDir}. Is the package installed correctly?`)
   }
 
-  const skillsRoot = path.join(os.homedir(), '.claude', 'skills')
+  const skillsRoot = path.join(homeDir, '.claude', 'skills')
   const targetDir = path.join(skillsRoot, 'alignmink-dtp')
 
   await mkdir(skillsRoot, { recursive: true })
@@ -116,16 +118,20 @@ async function installClaudeCode({ packageRoot, force }) {
   if (await pathExists(targetDir)) {
     if (!force) {
       const ok = await promptYesNo(
-        `[install-skills] ${targetDir} already exists. Overwrite?`
+        `[install-skills] ${targetDir} already exists. Overwrite? (a backup will be saved)`
       )
       if (!ok) {
         process.stdout.write('[install-skills] Cancelled. Existing skills untouched.\n')
         return
       }
     }
-    // Remove the old install before copying. fs.cp recursive overwrites
-    // file-by-file but won't remove files no longer in source.
-    await spawnRm(targetDir)
+    // Back up before overwrite. A non-tech CEO running --force shouldn't
+    // lose hand-edits silently. ISO timestamp without colons keeps the
+    // path safe on Windows-like filesystems.
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const backupDir = `${targetDir}.bak-${stamp}`
+    await rename(targetDir, backupDir)
+    process.stdout.write(`[install-skills] Backed up previous install to:\n  ${backupDir}\n`)
   }
 
   // Filter junk like macOS .DS_Store so the user's skills folder
@@ -141,12 +147,6 @@ async function installClaudeCode({ packageRoot, force }) {
   process.stdout.write(`Next: open Claude Code. The skill activates automatically when\n`)
   process.stdout.write(`you start a strategic conversation. Try saying "capture this\n`)
   process.stdout.write(`decision" once you've made a call you want to remember.\n`)
-}
-
-async function spawnRm(target) {
-  // Cross-platform "rm -rf" via Node's fs.rm.
-  const { rm } = await import('node:fs/promises')
-  await rm(target, { recursive: true, force: true })
 }
 
 async function installCowork({ packageRoot }) {

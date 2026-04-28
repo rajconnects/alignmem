@@ -1,5 +1,6 @@
 ---
-name: alignmem-decision-engine
+name: alignmink-decision-engine
+skill_version: 0.3.0
 description: >
   A modular strategic decision engine for founders and leaders. Routes to
   specialized skills (War Cabinet, future strategy tools) while enforcing a
@@ -8,7 +9,7 @@ description: >
   detecting contradictions, and traversing decision chains.
 ---
 
-# Alignmem Decision Engine
+# Alignmink Decision Engine
 
 > Every decision leaves a trace.
 

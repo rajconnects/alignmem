@@ -12,15 +12,62 @@ Traces conform to the **Alignmink Decision Trace Protocol (DTP) v0.1** — an op
 
 ## 60-second quickstart
 
+The simplest path — no install, runs the latest version every time:
+
 ```bash
-git clone https://github.com/rajconnects/alignmink-dtp.git
-cd alignmink-dtp
-./start.sh
+npx alignmink-dtp install-skills
+npx alignmink-dtp start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Set a passcode. Point the reader at any folder containing `alignmink-traces/threads/*.json`. Sample decisions are pre-seeded.
+The first command activates the capture skill in Claude Code. The second launches the Decision Journal at [http://localhost:3000](http://localhost:3000). Set a passcode. Point the reader at any folder containing `alignmink-traces/threads/*.json`. Sample decisions are pre-seeded.
+
+Prefer a one-time install? See [Updating](#updating) below.
 
 Works with [Docker](#docker) too.
+
+---
+
+## Three things to remember
+
+The CLI does three things. If you only learn one command, learn `doctor`.
+
+| Command | What it does |
+|---|---|
+| `alignmink-dtp doctor` | Tells you whether your install is current and prints the literal command to fix it if not. Run this first when anything looks off. |
+| `alignmink-dtp install-skills` | Installs the Claude Code capture skill into `~/.claude/skills/alignmink-dtp/`. Re-run with `--force` to refresh. Your previous skill folder is backed up to `<path>.bak-<timestamp>` before overwrite, so hand-edits aren't lost. |
+| `alignmink-dtp update` | Updates the Claude Code skill to match the installed CLI. If the CLI itself needs updating, prints the npm command for you. |
+
+---
+
+## Updating
+
+There are three independent versions. Most updates touch only one of them.
+
+| Version | Where it lives | Bumped when |
+|---|---|---|
+| **Package** | npm release (`npm view alignmink-dtp version`) | A new CLI feature ships |
+| **Skill** | `engine/SKILL.md` frontmatter, copied to `~/.claude/skills/alignmink-dtp/` | The Claude Code capture skill changes |
+| **Protocol** | `schema_version` field inside every trace file (DTP) | The trace JSON shape changes (rare — would break old files) |
+
+If you used `npx`:
+
+```bash
+npx alignmink-dtp@latest install-skills --force
+```
+
+If you installed globally (`npm install -g`):
+
+```bash
+npm install -g alignmink-dtp@latest && alignmink-dtp install-skills --force
+```
+
+If you're not sure which you used:
+
+```bash
+alignmink-dtp doctor
+```
+
+It detects how you installed and prints the exact command. Run that. Done.
 
 ---
 
