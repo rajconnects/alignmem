@@ -18,7 +18,7 @@ When you detect an implicit trigger, ask: *"Capture this as a decision trace? (y
 
 ## What to capture
 
-A DTP v0.1 trace has these fields. Required: `schema_version`, `trace_id`, `title`, `captured_at`, `author`, `decision`. Everything else is optional but encouraged.
+A DTP v0.1 trace has these fields. Required: `schema_version`, `trace_id`, `title`, `captured_at`, `author`, `decision.statement`. Everything else is optional but encouraged. The deliberation that led to the decision (alternatives weighed, dissent voiced, trade-offs surfaced) belongs in `nodes[]` — that is the canonical reasoning surface in DTP v0.1.
 
 ```json
 {
@@ -29,17 +29,50 @@ A DTP v0.1 trace has these fields. Required: `schema_version`, `trace_id`, `titl
   "captured_via": "cowork",
   "author": { "name": "<my name>", "role": "<my role, e.g. ceo>" },
   "decision": {
-    "statement": "<single-sentence commitment>",
-    "reasoning": "<why this, not the alternatives>",
-    "alternatives": [
-      { "option": "<what else was considered>", "rejected_because": "<why not>" }
-    ]
+    "statement": "<single-sentence commitment>"
   },
+  "nodes": [
+    {
+      "id": "dn-1",
+      "node_type": "alternative",
+      "author_role": "ceo",
+      "author_name": "<my name>",
+      "content": "<the option that was considered and rejected>",
+      "sequence_order": 1,
+      "created_at": "<same ISO timestamp as captured_at>",
+      "rejected_reason": "<why not — required when node_type is 'alternative'>"
+    },
+    {
+      "id": "dn-2",
+      "node_type": "resolution",
+      "author_role": "ceo",
+      "author_name": "<my name>",
+      "content": "<the committed direction, expanded with reasoning>",
+      "sequence_order": 2,
+      "created_at": "<same ISO timestamp as captured_at>"
+    }
+  ],
   "themes": ["<stakeholder-oriented tag, e.g. board, customers, team>"],
   "revisit_triggers": ["<plain-English condition that would reopen this>"],
   "impact": "low | medium | high | critical"
 }
 ```
+
+### Critical field-naming rules for `nodes[]`
+
+These keys are NOT optional and must use the exact canonical names. Pre-0.3.4 readers reject any other shape:
+
+| ✅ Use this | ❌ Not this |
+|---|---|
+| `node_type` | `type` |
+| `author_role` | `role`, `by_role` |
+| `author_name` | `author`, `by`, `name` |
+| `sequence_order` | `order`, `seq`, `n` |
+| `created_at` | `at`, `time`, `timestamp` |
+
+Common `node_type` values: `intent`, `alternative`, `response`, `dissent`, `analysis`, `resolution`. Pick the one that fits; the vocabulary is open.
+
+`impact` must be one of: `low`, `medium`, `high`, `critical`. Do NOT use `major`, `significant`, or other synonyms.
 
 ## How to capture
 

@@ -144,7 +144,13 @@ const rawTraceSchema = z.object({
   updated_at: z.string().optional(),
   // Document-style trace timestamp
   date: z.string().optional(),
-  nodes: z.array(traceNodeSchema).optional().default([]),
+  // Permissive at the raw layer — shorthand-shape nodes (e.g. captures
+  // from a stale Cowork instructions block that emit `type` instead of
+  // `node_type` and omit author_role/author_name) are normalized into
+  // canonical shape inside decisionTraceSchema.transform below. This is
+  // "be liberal in what you accept" applied at the trace boundary so
+  // legacy or producer-side bugs never silently lose decisions.
+  nodes: z.array(z.object({}).passthrough()).optional().default([]),
   edges: z.array(traceEdgeSchema).optional(),
 
   // DTP v0.1 fields — first-class so they typecheck and render.
@@ -153,7 +159,13 @@ const rawTraceSchema = z.object({
   decision: decisionSchema.optional(),
   revisit_triggers: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(1).optional(),
-  impact: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  // Spec enum is low|medium|high|critical. Producers occasionally emit
+  // 'major' (a common synonym from PMs / strategy decks); we coerce it
+  // to 'high' rather than reject the trace.
+  impact: z.union([
+    z.enum(['low', 'medium', 'high', 'critical']),
+    z.literal('major').transform(() => 'high' as const)
+  ]).optional(),
   attachments: z.array(attachmentSchema).optional(),
   content_hash: z.string().optional(),
   thread_id: z.string().optional(),
@@ -165,6 +177,46 @@ const rawTraceSchema = z.object({
   (data) => Boolean(data.topic || data.title || data.decision?.statement),
   { message: 'either topic, title, or decision.statement is required' }
 )
+
+// Normalize a single permissive-shape node into the canonical
+// traceNodeSchema shape. Pulls author_role/author_name from the
+// trace-level author when missing, defaults sequence_order to array
+// index, and falls back to captured_at for created_at. Aliases the
+// shorthand `type` key to canonical `node_type`. Pre-canonical
+// captures (e.g. from older Cowork instructions blocks that emitted
+// `type/content/rejected_reason`) load without being re-captured.
+function normalizeNode(
+  raw: Record<string, unknown>,
+  idx: number,
+  fallback: { author_name: string; author_role: string; created_at: string }
+) {
+  const node = raw as Record<string, unknown>
+  return {
+    id: typeof node.id === 'string' ? node.id : `dn-${idx + 1}`,
+    node_type:
+      typeof node.node_type === 'string'
+        ? node.node_type
+        : typeof node.type === 'string'
+          ? (node.type as string)
+          : 'note',
+    author_role:
+      typeof node.author_role === 'string' ? node.author_role : fallback.author_role,
+    author_name:
+      typeof node.author_name === 'string' ? node.author_name : fallback.author_name,
+    content: typeof node.content === 'string' ? node.content : '',
+    context:
+      node.context && typeof node.context === 'object'
+        ? node.context
+        : { source: '', session: '', related_topics: [] },
+    sequence_order:
+      typeof node.sequence_order === 'number' ? node.sequence_order : idx,
+    created_at:
+      typeof node.created_at === 'string' ? node.created_at : fallback.created_at,
+    // Preserve any extra producer-emitted fields (rejected_reason,
+    // entities, embedding, etc.) so nothing is dropped on import.
+    ...node
+  }
+}
 
 export const decisionTraceSchema = rawTraceSchema.transform((data) => {
   const id = data.id ?? data.trace_id!
@@ -180,6 +232,19 @@ export const decisionTraceSchema = rawTraceSchema.transform((data) => {
   const opened_at =
     data.opened_at ?? data.date ?? data.created_at ?? data.captured_at ?? captured_at
 
+  const fallback = {
+    author_name: data.author?.name ?? 'unknown',
+    author_role: data.author?.role ?? 'unknown',
+    created_at: captured_at
+  }
+  // Normalize permissive input then re-parse through the strict node
+  // schema. This guarantees consumers (indexer, derive, etc.) see the
+  // canonical typed shape regardless of producer-side shorthand.
+  const normalizedNodes = (data.nodes ?? []).map((n, idx) =>
+    normalizeNode(n as Record<string, unknown>, idx, fallback)
+  )
+  const nodes = z.array(traceNodeSchema).parse(normalizedNodes)
+
   return {
     ...data,
     id,
@@ -190,6 +255,7 @@ export const decisionTraceSchema = rawTraceSchema.transform((data) => {
     category: data.category ?? data.decision_category ?? '',
     captured_at,
     opened_at,
+    nodes,
   }
 })
 
