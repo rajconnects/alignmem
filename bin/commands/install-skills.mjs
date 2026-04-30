@@ -112,6 +112,11 @@ export async function installClaudeCode({ packageRoot, force, homeDir = os.homed
 
   const skillsRoot = path.join(homeDir, '.claude', 'skills')
   const targetDir = path.join(skillsRoot, 'alignmink-dtp')
+  // Backups live OUTSIDE skillsRoot so Claude Code does not register
+  // them as additional skills (any directory with a SKILL.md inside
+  // ~/.claude/skills/ becomes a skill). Pre-0.3.3 backups landed in
+  // skillsRoot itself and showed up as duplicates in the skill list.
+  const backupsRoot = path.join(homeDir, '.claude', 'backups', 'alignmink-dtp')
 
   await mkdir(skillsRoot, { recursive: true })
 
@@ -128,8 +133,9 @@ export async function installClaudeCode({ packageRoot, force, homeDir = os.homed
     // Back up before overwrite. A non-tech CEO running --force shouldn't
     // lose hand-edits silently. ISO timestamp without colons keeps the
     // path safe on Windows-like filesystems.
+    await mkdir(backupsRoot, { recursive: true })
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const backupDir = `${targetDir}.bak-${stamp}`
+    const backupDir = path.join(backupsRoot, stamp)
     await rename(targetDir, backupDir)
     process.stdout.write(`[install-skills] Backed up previous install to:\n  ${backupDir}\n`)
   }

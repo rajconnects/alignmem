@@ -84,9 +84,13 @@ export const decisionAlternativeSchema = z.object({
   rejected_because: z.string().min(1)
 }).passthrough()
 
+// DTP v0.1: only `statement` is required on `decision`. `reasoning` and
+// `alternatives` are kept readable for legacy traces but are NOT required —
+// the canonical reasoning surface is `nodes[]`. See schema/dtp-v0.1.json
+// description on `decision` and PROTOCOL.md §5.8.
 export const decisionSchema = z.object({
   statement: z.string().min(1),
-  reasoning: z.string().min(1),
+  reasoning: z.string().min(1).optional(),
   alternatives: z.array(decisionAlternativeSchema).default([])
 }).passthrough()
 

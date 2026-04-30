@@ -15,11 +15,16 @@ PORT="${1:-3000}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
+# Read package version for the banner so users can tell at a glance
+# whether they're on the current release vs. a stale checkout. The
+# protocol (DTP) is intentionally pinned at v0.1; the package moves.
+PKG_VERSION="$(node -p "require('./package.json').version" 2>/dev/null || echo "?")"
+
 echo ""
-echo "  ╔══════════════════════════════════════╗"
-echo "  ║          Decision Journal            ║"
-echo "  ║      alignmink-dtp · DTP v0.1        ║"
-echo "  ╚══════════════════════════════════════╝"
+echo "  ╔════════════════════════════════════════════╗"
+echo "  ║             Decision Journal               ║"
+printf "  ║   alignmink-dtp v%-7s · DTP v0.1         ║\n" "$PKG_VERSION"
+echo "  ╚════════════════════════════════════════════╝"
 echo ""
 
 # 1. Install deps only if node_modules is missing or lockfile changed

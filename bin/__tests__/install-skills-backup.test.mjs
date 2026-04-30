@@ -47,7 +47,7 @@ afterEach(() => {
 })
 
 describe('install-skills --force backup', () => {
-  it('renames existing target to .bak-<timestamp> and writes fresh content', async () => {
+  it('moves existing target to ~/.claude/backups/alignmink-dtp/<ts>/ and writes fresh content', async () => {
     const sentinel = 'CEO-edited content that must survive'
     const target = plantStaleTarget(homeDir, sentinel)
 
@@ -59,13 +59,17 @@ describe('install-skills --force backup', () => {
     expect(newSkill).toContain('skill_version: 0.3.0')
     expect(existsSync(path.join(target, 'NEW.md'))).toBe(true)
 
-    // Backup sibling exists, sentinel preserved.
+    // Backups live OUTSIDE ~/.claude/skills/ so Claude Code doesn't
+    // register them as duplicate skills.
     const skillsRoot = path.join(homeDir, '.claude', 'skills')
-    const siblings = readdirSync(skillsRoot)
-    const backups = siblings.filter((n) => n.startsWith('alignmink-dtp.bak-'))
-    expect(backups.length).toBe(1)
+    const skillSiblings = readdirSync(skillsRoot)
+    expect(skillSiblings.filter((n) => n.startsWith('alignmink-dtp.bak-'))).toHaveLength(0)
 
-    const backupDir = path.join(skillsRoot, backups[0])
+    const backupsRoot = path.join(homeDir, '.claude', 'backups', 'alignmink-dtp')
+    const stamps = readdirSync(backupsRoot)
+    expect(stamps.length).toBe(1)
+
+    const backupDir = path.join(backupsRoot, stamps[0])
     const restoredSentinel = readFileSync(path.join(backupDir, 'MY-NOTES.md'), 'utf8')
     expect(restoredSentinel).toBe(sentinel)
 
@@ -77,9 +81,7 @@ describe('install-skills --force backup', () => {
   it('does not create a backup when target did not exist', async () => {
     await installClaudeCode({ packageRoot, force: true, homeDir })
 
-    const skillsRoot = path.join(homeDir, '.claude', 'skills')
-    const siblings = readdirSync(skillsRoot)
-    const backups = siblings.filter((n) => n.startsWith('alignmink-dtp.bak-'))
-    expect(backups.length).toBe(0)
+    const backupsRoot = path.join(homeDir, '.claude', 'backups', 'alignmink-dtp')
+    expect(existsSync(backupsRoot)).toBe(false)
   })
 })
