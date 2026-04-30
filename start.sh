@@ -69,5 +69,36 @@ SEED
   echo "[decision-journal] Pre-loaded sample decisions for first run."
 fi
 
+# 4.5. Sync registered projects' source threads into the local trace store
+#      BEFORE the journal boots. Closes the "added while journal was off"
+#      gap: the in-app importer only fires when the local store is empty,
+#      and the watcher with ignoreInitial:true misses pre-existing files.
+#      This is local-only ergonomics — the published CLI gets the proper
+#      fix in v0.4.0 (delta-sync inside bin/commands/start.mjs).
+if command -v rsync >/dev/null 2>&1 && [ -f "$ALIGNMEM_HOME/projects.json" ]; then
+  # Parse projects.json with node (already a dependency); emit TSV of
+  # name<TAB>path so the shell loop is jq-free.
+  node -e '
+    const fs = require("fs");
+    const home = process.env.ALIGNMEM_HOME;
+    const raw = fs.readFileSync(home + "/projects.json", "utf8");
+    for (const p of JSON.parse(raw)) {
+      if (p && p.name && p.path) process.stdout.write(p.name + "\t" + p.path + "\n");
+    }
+  ' | while IFS=$'\t' read -r proj_name proj_path; do
+    src="$proj_path/alignmink-traces/threads"
+    dst="$ALIGNMEM_HOME/traces/$proj_name"
+    if [ -d "$src" ]; then
+      mkdir -p "$dst"
+      # Source → cache, JSON only, only-newer; never deletes anything in
+      # the cache (deletes are the watcher's responsibility when running).
+      rsync -au --include="*.json" --exclude="*" "$src/" "$dst/" 2>/dev/null || true
+      # Match the 0o600 perms the in-app importer sets on each trace.
+      find "$dst" -type f -name "*.json" -exec chmod 600 {} \; 2>/dev/null
+    fi
+  done
+  echo "[decision-journal] Synced trace files for registered projects."
+fi
+
 # 5. Boot via the CLI so behavior matches `npx alignmink-dtp start`.
 exec node bin/alignmink-dtp.mjs start --port "$PORT" --no-open
