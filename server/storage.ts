@@ -144,6 +144,87 @@ export async function importTrace(sourcePath: string, projectName: string): Prom
   await fs.writeFile(destPath, contents, { mode: 0o600 })
 }
 
+// Delta-sync source threads → local cache. Copies files that are
+// missing from the cache OR whose source mtime is newer than the cached
+// copy. Files in the cache that are no longer in source are NOT removed
+// (deletes are the watcher's job when the journal is running). Cheap to
+// call on every /api/traces request — most invocations are a single
+// readdir + stat per file with no copies.
+//
+// This closes the "added while journal was off" gap: the watcher only
+// fires for changes after it starts (ignoreInitial:true), and the
+// previous app.ts logic only ran importAllTraces when the cache was
+// empty. New traces between runs were silently invisible.
+export async function syncTraces(
+  projectRoot: string,
+  projectName: string
+): Promise<{ added: number; updated: number; unchanged: number; failed: number }> {
+  const threadsDir = path.join(projectRoot, 'alignmink-traces', 'threads')
+  const destDir = await ensureTracesDir(projectName)
+
+  let sourceFiles: string[]
+  try {
+    sourceFiles = (await fs.readdir(threadsDir)).filter((f) => f.toLowerCase().endsWith('.json'))
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    // eslint-disable-next-line no-console
+    console.warn(`[storage] syncTraces could not read ${threadsDir}: ${msg}`)
+    return { added: 0, updated: 0, unchanged: 0, failed: 0 }
+  }
+
+  let added = 0
+  let updated = 0
+  let unchanged = 0
+  let failed = 0
+
+  await Promise.allSettled(
+    sourceFiles.map(async (fileName) => {
+      const sourcePath = path.join(threadsDir, fileName)
+      const destPath = path.join(destDir, fileName)
+
+      let copyReason: 'add' | 'update' | null = null
+      try {
+        const [sourceStat, destStat] = await Promise.all([
+          fs.stat(sourcePath),
+          fs.stat(destPath).catch(() => null)
+        ])
+        if (!destStat) copyReason = 'add'
+        else if (sourceStat.mtimeMs > destStat.mtimeMs) copyReason = 'update'
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        // eslint-disable-next-line no-console
+        console.warn(`[storage] syncTraces stat failed for ${fileName}: ${msg}`)
+        failed++
+        return
+      }
+
+      if (!copyReason) {
+        unchanged++
+        return
+      }
+
+      try {
+        const contents = await Promise.race([
+          fs.readFile(sourcePath, 'utf8'),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`timeout reading ${fileName}`)), IMPORT_TIMEOUT_MS)
+          )
+        ])
+        await fs.writeFile(destPath, contents, { mode: 0o600 })
+        if (copyReason === 'add') added++
+        else updated++
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        // eslint-disable-next-line no-console
+        console.warn(`[storage] syncTraces failed for ${fileName}: ${msg}`)
+        failed++
+      }
+    })
+  )
+
+  return { added, updated, unchanged, failed }
+}
+
 export async function importAllTraces(
   projectRoot: string,
   projectName: string

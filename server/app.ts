@@ -15,9 +15,9 @@ import {
 } from './auth.js'
 import {
   findProjectByName,
-  getTracesDir,
   importAllTraces,
   readProjects,
+  syncTraces,
   upsertProject,
   validateProjectPath,
   type ProjectEntry
@@ -153,16 +153,17 @@ export async function createApp(options: { cookieSecret: string }): Promise<Expr
   app.get('/api/traces', requireSession, async (req, res) => {
     const project = await resolveProject(req, res)
     if (!project) return
-    // Auto-import on first access: if local store is empty, bulk-import from source
-    const localDir = getTracesDir(project.name)
-    try {
-      const localFiles = await fs.readdir(localDir)
-      if (localFiles.filter(f => f.endsWith('.json')).length === 0) {
-        await importAllTraces(project.path, project.name)
-      }
-    } catch {
-      // Local dir doesn't exist yet — trigger import
-      await importAllTraces(project.path, project.name)
+    // Delta-sync source → local cache on every request. Catches files
+    // added while the journal was off — the watcher's ignoreInitial
+    // misses them, and the previous "import only when cache empty"
+    // path skipped every restart with non-empty cache. Cheap when
+    // nothing's changed: stat-only per file, no copies.
+    const sync = await syncTraces(project.path, project.name)
+    if (sync.added || sync.updated) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[app] syncTraces "${project.name}": +${sync.added} added, ${sync.updated} updated, ${sync.unchanged} unchanged, ${sync.failed} failed`
+      )
     }
     const result = await indexProject(project.path, project.name)
     res.json({
